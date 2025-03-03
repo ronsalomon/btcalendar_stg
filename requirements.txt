@@ -1,0 +1,6 @@
+Flask>=2.0
+requests>=2.20
+python-dotenv>=0.15.0
+pytz
+python-dateutil
+gunicorn
