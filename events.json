@@ -1,0 +1,29 @@
+[
+  {
+    "title": "Valentine's Dinner Event with a long title",
+    "start_date": "2025-03-07",
+    "start_time": "19:00",
+    "end_date": "2025-03-07",
+    "end_time": "21:00",
+    "description": "Join Pastor Cymbala for his online devotional, beginning at 5am every weekday! Each devotional remains on our website and on YouTube for those who wish to review or tune in later in the day.",
+    "image": "https://timelyapp-prod.s3.us-west-2.amazonaws.com/images/54709980/2025_Q1_TuesdaysYT_AlU2.jpeg"
+  },
+  {
+    "title": "Breakfast Luncheon with Tri-state Pastors",
+    "start_date": "2025-03-07",
+    "start_time": "21:00",
+    "end_date": "2025-03-07",
+    "end_time": "22:00",
+    "description": "Join Pastor Cymbala for his online devotional, beginning at 5am every weekday! Each devotional remains on our website and on YouTube for those who wish to review or tune in later in the day.",
+    "image": "https://timelyapp-prod.s3.us-west-2.amazonaws.com/images/54709980/2025_Q1_TuesdaysYT_AlU2.jpeg"
+  },
+  {
+    "title": "Morning Devotion",
+    "start_date": "2025-03-08",
+    "start_time": "09:00",
+    "end_date": "2025-03-08",
+    "end_time": "07:30",
+    "description": "Join Pastor Cymbala for his online devotional, beginning at 5am every weekday! Each devotional remains on our website and on YouTube for those who wish to review or tune in later in the day.",
+    "image": "https://timelyapp-prod.s3.us-west-2.amazonaws.com/images/54709980/2025_Q1_Sundays_lYxP.jpg"
+  }
+]

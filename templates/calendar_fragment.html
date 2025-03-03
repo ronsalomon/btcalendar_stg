@@ -1,0 +1,58 @@
+<table class="calendar-table">
+  <thead>
+    <tr>
+      <th>SUN</th>
+      <th>MON</th>
+      <th>TUE</th>
+      <th>WED</th>
+      <th>THU</th>
+      <th>FRI</th>
+      <th>SAT</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for week in month_days %}
+      <tr>
+        {% for day_date in week %}
+          <td class="{% if day_date.month != month %}other-month{% endif %}">
+            {% if day_date == today %}
+              <div class="day-number today">{{ day_date.day }}</div>
+            {% else %}
+              <div class="day-number">{{ day_date.day }}</div>
+            {% endif %}
+            {% if day_date.month == month and day_date.day in events_monthly %}
+              {% for event in events_monthly[day_date.day] %}
+                {% if event.start_date|trim and event.start_time|trim %}
+                  {% set event_dt = datetime.strptime(event.start_date ~ " " ~ event.start_time, "%Y-%m-%d %H:%M") %}
+                  {% set time_str = event_dt.strftime("%I:%M%p").lstrip("0").lower() %}
+                {% else %}
+                  {% set event_dt = datetime.strptime("2025-02-14 19:00", "%Y-%m-%d %H:%M") %}
+                  {% set time_str = "7:00pm" %}
+                {% endif %}
+                <div class="event-container">
+                  <div class="event-item">
+                    <strong>{{ time_str }}</strong> {{ event.title }}
+                  </div>
+                  <div class="event-tooltip">
+                    {% if event.image %}
+                      <div class="tooltip-image-bg">
+                        <img src="{{ event.image }}" alt="Event Image" class="tooltip-image">
+                      </div>
+                    {% endif %}
+                    <div class="tooltip-title">{{ event.title }}</div>
+                    <div class="tooltip-datetime">
+                      {{ event_dt.strftime("%a, %b %d") }} @ {{ time_str }}
+                    </div>
+                    <div class="tooltip-description">
+                      {{ event.description }}
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

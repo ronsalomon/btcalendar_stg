@@ -1,0 +1,192 @@
+<!--List View Header-->
+<div class="calendar-container">
+  <div class="list-view-header">
+    <div class="left-section">
+      <div class="modern-list-header">
+        <span class="chevron chevron-left" id="listChevronLeft">&#10094;</span>
+        <span class="date-name" id="listDate" data-date="{{ display_date_iso }}">{{ display_date_iso }}</span>
+        <span class="chevron chevron-right" id="listChevronRight">&#10095;</span>
+      </div>
+    </div>
+    <div class="right-section">
+      <div class="search-container">
+        <input type="text" placeholder="Search" class="search-box">
+        <span class="search-icon"><i class="fa-solid fa-magnifying-glass" style="color: #223e49; font-size:14px; opacity: .7;"></i></span>
+      </div>
+      <!-- Add-to-Calendar Dropdown -->
+      <div class="add-calendar-dropdown-container">
+        <button class="action-button add-calendar-button" id="addCalendarButton">
+          <span class="calendar-icon">
+            <span class="date-icon">
+              <i class="fa-regular fa-calendar-days" style="font-size:15px;color:#506688; opacity: .5;"></i>
+            </span>
+          </span> Add To Calendar <span class="arrow">▼</span>
+        </button>
+        <div class="add-calendar-dropdown" style="display: none;">
+          <ul class="dropdown-list">
+            <li class="dropdown-item">
+              <a href="https://calendar.google.com/calendar/r?cid=https%3A%2F%2Flocalhost%2Fcalendar.ics" class="download-option" data-type="google">Google Calendar</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="webcal://localhost/calendar.ics" class="download-option" data-type="apple">Apple Calendar</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="webcal://localhost/calendar.ics" class="download-option" data-type="outlook">Outlook</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="download-option" data-type="copy">Copy Import URL</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="https://localhost/calendar.ics" class="download-option" data-type="download-ics" download>Download ICS</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="https://localhost/calendar.xml" class="download-option" data-type="download-xml" download>Download XML</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <!-- Views Dropdown -->
+      <div class="view-dropdown-container">
+        <button class="action-button views-toggle-button">Views <span class="arrow">▼</span></button>
+        <div class="view-dropdown views-dropdown" style="display: none;">
+          <ul class="dropdown-list">
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-view="calendar">Month</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-view="list">Modern List</a>
+            </li>
+            <!-- Additional layout options (if needed) -->
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="posterboard">Posterboard</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="tile">Tile</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="stream">Stream</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="modern-row">Modern Row</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="clean-list">Clean List</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="clean-row">Clean Row</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="agenda">Agenda</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="week">Week</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="month-layout">Month Layout</a>
+            </li>
+            <li class="dropdown-item">
+              <a href="#" class="toggle-button" data-layout="map">Map</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- modern_list_fragment.html -->
+  <div class="modern-list-events">
+    {% for ev in events %}
+      <div class="modern-list-event">
+        {% if ev.image %}
+          <div class="modern-list-event-image">
+            <img src="{{ ev.image }}" alt="{{ ev.title }}">
+          </div>
+        {% endif %}
+        <div class="modern-list-event-content">
+          <div class="event-title"><span>{{ ev.title }}</span></div>
+          <div class="event-date-time">
+            <span class="date-icon">
+              <i class="fa fa-calendar" style="font-size:15px;color:#506688;"></i>
+            </span>
+            <span class="event-date" data-date="{{ ev.start_date }}">
+              {{ datetime.strptime(ev.start_date, "%Y-%m-%d").strftime("%B ") }}{{ datetime.strptime(ev.start_date, "%Y-%m-%d").day }}
+            </span>
+            <span class="time-icon">
+              <i class="fa-solid fa-clock" style="font-size: 15px; color:#506688;"></i>
+            </span>
+            <span class="event-time" data-time="{{ ev.start_time }}">
+              {{ ev.start_time }}
+            </span>
+          </div>          
+          <p class="event-description">
+            {{ ev.description }}
+          </p>
+          <div class="event-date-time">
+            <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Parse a "YYYY-MM-DD" string into a local Date object.
+    function parseYMD(rawDate) {
+      const parts = rawDate.split("-");
+      return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+  
+    // Format event dates from a raw "YYYY-MM-DD" into "Month Day" (e.g. "March 7").
+    function formatEventDates() {
+      const monthNames = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+      ];
+      document.querySelectorAll('.event-date').forEach(function(el) {
+        const rawDate = el.getAttribute('data-date');
+        if (rawDate) {
+          try {
+            const date = parseYMD(rawDate);
+            el.textContent = `${monthNames[date.getMonth()]} ${date.getDate()}`;
+          } catch (e) {
+            console.error("Error formatting date for", rawDate, e);
+          }
+        }
+      });
+    }
+  
+    // Convert 24-hour time (e.g. "19:00") to 12-hour time with am/pm (e.g. "07:00pm").
+    function formatEventTime(rawTime) {
+      // If the time already includes am/pm, assume it's formatted.
+      if (/[ap]m/i.test(rawTime)) {
+        return rawTime;
+      }
+      const parts = rawTime.split(":");
+      let hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1], 10);
+      const ampm = hours >= 12 ? 'pm' : 'am';
+      hours = hours % 12;
+      if (hours === 0) hours = 12;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}${ampm}`;
+    }
+  
+    // Format all event time elements.
+    function formatEventTimes() {
+      document.querySelectorAll('.event-time').forEach(function(el) {
+        const rawTime = el.getAttribute('data-time');
+        if (rawTime) {
+          try {
+            el.textContent = formatEventTime(rawTime);
+          } catch (e) {
+            console.error("Error formatting time for", rawTime, e);
+          }
+        }
+      });
+    }
+  
+    // Run formatting functions.
+    formatEventDates();
+    formatEventTimes();
+  });
+</script>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BT Calendar</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script src="https://kit.fontawesome.com/24d55052d4.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div class="calendar-container">
+    <!-- Static Header -->
+    <div id="staticHeader" class="calendar-header-bar">
+      <div class="left-section">
+        <!-- Month Header with Chevrons (Month View) -->
+        <div class="month-header">
+          <span class="chevron chevron-left" id="chevronLeft">&#10094;</span>
+        
+          <!-- Container for month name and the popup -->
+          <span class="month-name-container" style="position: relative;">
+            <!-- This text shows the current month/year and toggles the popup -->
+            <span class="month-name" id="monthName" data-year="{{ year }}" data-month="{{ month }}">
+              {{ month_name }} {{ year }}
+            </span>
+        
+            <!-- Month/Year Popup (hidden by default) -->
+            <div class="month-popup" id="monthDropdown" style="display: none;">
+              <div class="year-header">
+                <span id="yearLabel">2025</span>
+                <div class="popup-chevron-group">
+                  <span id="yearChevronLeft" class="popup-chevron">&#10094;</span>
+                  <span id="yearChevronRight" class="popup-chevron">&#10095;</span>
+                </div>
+              </div>
+              <div class="months-grid">
+                <div class="month-cell" data-month="1">JAN</div>
+                <div class="month-cell" data-month="2">FEB</div>
+                <div class="month-cell" data-month="3">MAR</div>
+                <div class="month-cell" data-month="4">APR</div>
+                <div class="month-cell" data-month="5">MAY</div>
+                <div class="month-cell" data-month="6">JUN</div>
+                <div class="month-cell" data-month="7">JUL</div>
+                <div class="month-cell" data-month="8">AUG</div>
+                <div class="month-cell" data-month="9">SEP</div>
+                <div class="month-cell" data-month="10">OCT</div>
+                <div class="month-cell" data-month="11">NOV</div>
+                <div class="month-cell" data-month="12">DEC</div>
+              </div>
+            </div>
+          </span>
+        
+          <span class="chevron chevron-right" id="chevronRight">&#10095;</span>
+        </div>        
+      </div>
+      <div class="right-section">
+        <div class="search-container">
+          <input type="text" placeholder="Search" class="search-box">
+          <span class="search-icon"><i class="fa-solid fa-magnifying-glass" style="color: #223e49; font-size:14px; opacity: .7;"></i></span>
+        </div>
+        <!-- Add-to-Calendar Dropdown -->
+        <div class="add-calendar-dropdown-container">
+          <button class="action-button add-calendar-button">
+            <span class="calendar-icon"><span class="date-icon">
+              <i class="fa-regular fa-calendar-days" style="font-size:15px;color:#506688; opacity: .5;"></i>
+            </span>
+            </span> Add To Calendar <span class="arrow">▼</span>
+          </button>
+          <div class="add-calendar-dropdown" style="display: none;">
+            <ul class="dropdown-list">
+              <li class="dropdown-item">
+                <a href="https://calendar.google.com/calendar/r?cid=https%3A%2F%2Flocalhost%2Fcalendar.ics" class="download-option" data-type="google">Google Calendar</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="webcal://localhost/calendar.ics" class="download-option" data-type="apple">Apple Calendar</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="webcal://localhost/calendar.ics" class="download-option" data-type="outlook">Outlook</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="download-option" data-type="copy">Copy Import URL</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="https://localhost/calendar.ics" class="download-option" data-type="download-ics" download>Download ICS</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="https://localhost/calendar.xml" class="download-option" data-type="download-xml" download>Download XML</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <!-- Views Dropdown -->
+        <div class="view-dropdown-container">
+          <button class="action-button views-toggle-button">Views <span class="arrow">▼</span></button>
+          <div class="view-dropdown views-dropdown" style="display: none;">
+            <ul class="dropdown-list">
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-view="calendar">Month</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-view="list">Modern List</a>
+              </li>
+              <!-- Additional layout options (if needed) -->
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="posterboard">Posterboard</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="tile">Tile</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="stream">Stream</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="modern-row">Modern Row</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="clean-list">Clean List</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="clean-row">Clean Row</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="agenda">Agenda</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="week">Week</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="month-layout">Month Layout</a>
+              </li>
+              <li class="dropdown-item">
+                <a href="#" class="toggle-button" data-layout="map">Map</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Content Area -->
+    <div id="viewContainer" style="margin-top:20px;">
+      <!-- Monthly Calendar View -->
+      <div id="calendarView">
+        {% include "calendar_fragment.html" %}
+      </div>
+      
+      <!-- Modern List View (initially hidden) -->
+      <div id="listView" style="display: none;">
+        {% include "modern_list_fragment.html" %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- JavaScript -->
+  <script>
+    // ================================
+    // Calendar View Functionality
+    // ================================
+    var monthNameElem = document.getElementById('monthName');
+    var currentYear = parseInt(monthNameElem.getAttribute('data-year'));
+    var currentMonth = parseInt(monthNameElem.getAttribute('data-month')); // 1-12
+  
+    function updateHeader(year, month) {
+      var monthNames = ["January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"];
+      monthNameElem.textContent = monthNames[month - 1] + " " + year;
+      monthNameElem.setAttribute('data-year', year);
+      monthNameElem.setAttribute('data-month', month);
+    }
+  
+    function updateCalendar(year, month) {
+      fetch("/api/calendar?year=" + year + "&month=" + month)
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('calendarView').innerHTML = html;
+        })
+        .catch(error => console.error("Error fetching calendar:", error));
+    }
+  
+    // Chevron for previous month
+    document.getElementById('chevronLeft').addEventListener('click', function() {
+      currentMonth--;
+      if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear--;
+      }
+      updateHeader(currentYear, currentMonth);
+      updateCalendar(currentYear, currentMonth);
+    });
+  
+    // Chevron for next month
+    document.getElementById('chevronRight').addEventListener('click', function() {
+      currentMonth++;
+      if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear++;
+      }
+      updateHeader(currentYear, currentMonth);
+      updateCalendar(currentYear, currentMonth);
+    });
+  
+    // ================================
+    // NEW: Month Popup Functionality
+    // ================================
+    var monthDropdown = document.getElementById('monthDropdown');
+    var yearLabel = document.getElementById('yearLabel');
+    var yearChevronLeft = document.getElementById('yearChevronLeft');
+    var yearChevronRight = document.getElementById('yearChevronRight');
+  
+    // Show/hide popup when current month name is clicked
+    monthNameElem.addEventListener('click', function(e) {
+      // Set the year label in the popup
+      yearLabel.textContent = currentYear;
+  
+      // Highlight the current month in the grid
+      highlightSelectedMonth(currentMonth);
+  
+      // Toggle the popup
+      if (monthDropdown.style.display === 'none' || monthDropdown.style.display === '') {
+        monthDropdown.style.display = 'block';
+      } else {
+        monthDropdown.style.display = 'none';
+      }
+      e.stopPropagation(); // prevent outside click from immediately closing
+    });
+  
+    // Change year in the popup with chevrons
+    yearChevronLeft.addEventListener('click', function(e) {
+      currentYear--;
+      yearLabel.textContent = currentYear;
+      highlightSelectedMonth(currentMonth);
+      e.stopPropagation();
+    });
+  
+    yearChevronRight.addEventListener('click', function(e) {
+      currentYear++;
+      yearLabel.textContent = currentYear;
+      highlightSelectedMonth(currentMonth);
+      e.stopPropagation();
+    });
+  
+    // Listen for month-cell clicks in the popup
+    document.querySelectorAll('.month-cell').forEach(function(cell) {
+      cell.addEventListener('click', function(e) {
+        var selectedMonth = parseInt(this.getAttribute('data-month'), 10);
+        currentMonth = selectedMonth;
+        currentYear = parseInt(yearLabel.textContent, 10); // the year currently shown
+  
+        // Update the header & fetch new calendar
+        updateHeader(currentYear, currentMonth);
+        updateCalendar(currentYear, currentMonth);
+  
+        // Hide the popup
+        monthDropdown.style.display = 'none';
+        e.stopPropagation();
+      });
+    });
+  
+    // Highlight the selected month cell in the popup
+    function highlightSelectedMonth(monthNum) {
+      document.querySelectorAll('.month-cell').forEach(function(cell) {
+        cell.classList.remove('selected');
+      });
+      var selector = '.month-cell[data-month="' + monthNum + '"]';
+      var selectedCell = document.querySelector(selector);
+      if (selectedCell) {
+        selectedCell.classList.add('selected');
+      }
+    }
+  
+    // Hide popup if clicking anywhere outside
+    document.addEventListener('click', function() {
+      monthDropdown.style.display = 'none';
+    });
+  
+    // ================================
+    // Modern List Header (Day Navigation)
+    // ================================
+    var currentListDate = new Date();
+  
+    function formatDateForAPI(date) {
+      // Format date as YYYY-MM-DD for API calls
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  
+    function updateListDateHeader() {
+      var options = { weekday: 'short', month: 'long', day: 'numeric' };
+      var listDateElem = document.getElementById('listDate');
+      if (listDateElem) {
+        listDateElem.textContent = currentListDate.toLocaleDateString('en-US', options);
+      }
+    }
+  
+    function updateListEvents() {
+      const formattedDate = formatDateForAPI(currentListDate);
+      fetch(`/api/list_events/${formattedDate}`)
+        .then(response => response.text())
+        .then(html => {
+          // Only replace the events part, not the entire list view
+          const eventsContainer = document.querySelector('.modern-list-events');
+          if (eventsContainer) {
+            eventsContainer.outerHTML = html;
+          }
+          // Format dates and times for the new events
+          formatEventDatesAndTimes();
+        })
+        .catch(error => console.error("Error fetching events:", error));
+    }
+  
+    function formatEventDatesAndTimes() {
+      // Format all event dates
+      document.querySelectorAll('.event-date').forEach(function(element) {
+        const rawDate = element.getAttribute('data-date');
+        if (rawDate) {
+          try {
+            // Example: parse & format
+            const dateParts = rawDate.split('-');
+            const tempDate = new Date(+dateParts[0], +dateParts[1] - 1, +dateParts[2]);
+            const month = tempDate.toLocaleString('en-US', { month: 'long' });
+            const day = tempDate.getDate();
+            element.textContent = `${month} ${day}`;
+          } catch (e) {
+            console.error('Error formatting date:', e);
+          }
+        }
+      });
+  
+      // Format all event times
+      document.querySelectorAll('.event-time').forEach(function(element) {
+        const rawTime = element.getAttribute('data-time');
+        if (rawTime) {
+          try {
+            // Convert 24-hour "HH:MM" to "h:MMam/pm"
+            let [h, m] = rawTime.split(':');
+            let hours = parseInt(h, 10);
+            let minutes = parseInt(m, 10) || 0;
+            const ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            if (hours === 0) hours = 12;
+            const formattedTime = `${hours.toString().padStart(1, '0')}:${minutes.toString().padStart(2, '0')}${ampm}`;
+            element.textContent = formattedTime;
+          } catch (e) {
+            console.error('Error formatting time:', e);
+          }
+        }
+      });
+    }
+  
+    function initializeModernListHeader() {
+      // Reset to today when switching to Modern List view.
+      currentListDate = new Date();
+      updateListDateHeader();
+      updateListEvents();
+  
+      var listChevronLeft = document.getElementById('listChevronLeft');
+      var listChevronRight = document.getElementById('listChevronRight');
+  
+      if (listChevronLeft) {
+        // Remove any existing event listeners
+        listChevronLeft.replaceWith(listChevronLeft.cloneNode(true));
+        listChevronLeft = document.getElementById('listChevronLeft');
+  
+        listChevronLeft.addEventListener('click', function() {
+          currentListDate.setDate(currentListDate.getDate() - 1);
+          updateListDateHeader();
+          updateListEvents();
+        });
+      }
+  
+      if (listChevronRight) {
+        // Remove any existing event listeners
+        listChevronRight.replaceWith(listChevronRight.cloneNode(true));
+        listChevronRight = document.getElementById('listChevronRight');
+  
+        listChevronRight.addEventListener('click', function() {
+          currentListDate.setDate(currentListDate.getDate() + 1);
+          updateListDateHeader();
+          updateListEvents();
+        });
+      }
+    }
+  
+    // ================================
+    // Views Dropdown Functionality
+    // ================================
+    document.querySelectorAll('.views-toggle-button').forEach(function(button) {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        var dropdown = this.parentElement.querySelector('.views-dropdown');
+        if (dropdown) {
+          dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        }
+      });
+    });
+  
+    // Close any open view dropdown if clicking outside
+    document.addEventListener('click', function(e) {
+      document.querySelectorAll('.views-toggle-button').forEach(function(button) {
+        var dropdown = button.parentElement.querySelector('.views-dropdown');
+        if (dropdown && !button.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+    });
+  
+    // Handle view toggle clicks from the dropdown
+    document.querySelectorAll('.toggle-button').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        var view = this.getAttribute('data-view');
+        var layout = this.getAttribute('data-layout');
+  
+        if (view === 'calendar') {
+          document.getElementById('calendarView').style.display = 'block';
+          document.getElementById('listView').style.display = 'none';
+          // Show the static header
+          document.getElementById('staticHeader').style.display = 'flex';
+          var listHeader = document.querySelector('.list-view-header');
+          if (listHeader) {
+            listHeader.style.display = 'none';
+          }
+        } else if (view === 'list') {
+          document.getElementById('calendarView').style.display = 'none';
+          document.getElementById('listView').style.display = 'block';
+          // Hide the calendar header
+          document.getElementById('staticHeader').style.display = 'none';
+          var listHeader = document.querySelector('.list-view-header');
+          if (listHeader) {
+            listHeader.style.display = 'flex';
+          }
+          initializeModernListHeader();
+        }
+  
+        if (layout) {
+          console.log("Selected layout: " + layout);
+          // Additional layout switching code can go here
+        }
+  
+        // Close any open dropdown
+        document.querySelectorAll('.views-dropdown').forEach(function(dd) {
+          dd.style.display = 'none';
+        });
+      });
+    });
+  
+    // ================================
+    // Add-to-Calendar Dropdown
+    // ================================
+    document.querySelectorAll('.add-calendar-dropdown-container').forEach(function(container) {
+      var button = container.querySelector('.add-calendar-button');
+      var dropdown = container.querySelector('.add-calendar-dropdown');
+  
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      });
+  
+      // Close the dropdown if clicking outside the container
+      document.addEventListener('click', function(e) {
+        if (!container.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+    });
+  
+    document.querySelectorAll('.download-option').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        var type = this.getAttribute('data-type');
+        if (type === "apple" || type === "outlook" || type === "google" ||
+            type === "download-ics" || type === "download-xml") {
+          return;
+        }
+        if (type === "copy") {
+          e.preventDefault();
+          var importUrl = "https://localhost/calendar.ics";
+          navigator.clipboard.writeText(importUrl).then(function() {
+            var originalContent = button.innerHTML;
+            button.innerHTML = "Link copied to clipboard";
+            var tempLink = document.createElement('a');
+            tempLink.href = importUrl;
+            tempLink.download = "calendar.ics";
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+            setTimeout(function() {
+              button.innerHTML = originalContent;
+            }, 2000);
+          }).catch(function(err) {
+            console.error("Failed to copy text: ", err);
+          });
+          dropdown.style.display = 'none';
+          return;
+        }
+        e.preventDefault();
+        alert("Selected " + type + " calendar option.");
+        dropdown.style.display = 'none';
+      });
+    });
+  
+    // On initial page load, format any existing event dates/times in the calendar
+    document.addEventListener('DOMContentLoaded', function() {
+      formatEventDatesAndTimes();
+    });
+  </script>  
+</body>
+</html>
