@@ -82,10 +82,10 @@
                 <a href="#" class="download-option" data-type="copy">Copy Import URL</a>
               </li>
               <li class="dropdown-item">
-                <a href="https://localhost/calendar.ics" class="download-option" data-type="download-ics" download>Download ICS</a>
+                <a href="https://btcalendar-stg.onrender.com/calendar.ics" class="download-option" data-type="download-ics" download>Download ICS</a>
               </li>
               <li class="dropdown-item">
-                <a href="https://localhost/calendar.xml" class="download-option" data-type="download-xml" download>Download XML</a>
+                <a href="https://btcalendar-stg.onrender.com/calendar.xml" class="download-option" data-type="download-xml" download>Download XML</a>
               </li>
             </ul>
           </div>
@@ -476,7 +476,7 @@
         }
         if (type === "copy") {
           e.preventDefault();
-          var importUrl = "https://localhost/calendar.ics";
+          var importUrl = "https://btcalendar-stg.onrender.com/calendar.ics";
           navigator.clipboard.writeText(importUrl).then(function() {
             var originalContent = button.innerHTML;
             button.innerHTML = "Link copied to clipboard";
