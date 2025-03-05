@@ -1,8 +1,10 @@
 import os
 import json
 import calendar
-from datetime import datetime, date
+import uuid
+from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify
+from xml.sax.saxutils import escape
 
 app = Flask(__name__)
 app.jinja_env.globals.update(datetime=datetime)
@@ -87,16 +89,14 @@ def events_by_date(date_str):
 @app.route("/api/list_events/<date_str>")
 def list_events(date_str):
     """
-    Returns ONLY the events content for a given date, not the entire fragment.
-    
-    :param date_str: Date string in YYYY-MM-DD format
+    Returns the events content for a given date.
+    If there are no events for the selected day, returns all upcoming events
+    (events with a date >= today's date), sorted by date and time.
     """
     try:
-        # Parse the date string
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        
-        # Get filtered events
         all_events = load_events()
+        # First, filter events that occur exactly on the target date.
         filtered_events = []
         for event in all_events:
             try:
@@ -104,14 +104,33 @@ def list_events(date_str):
                 if event_date == target_date:
                     filtered_events.append(event)
             except (ValueError, KeyError):
-                # Skip events with invalid dates
                 continue
-        
-        # Return just the events HTML, not the entire fragment
-        return render_template("list_events_fragment.html",
-                           events=filtered_events)
+
+        # If no events on the selected day, show upcoming events (from today onward).
+        if not filtered_events:
+            upcoming_events = []
+            for event in all_events:
+                try:
+                    event_date = datetime.strptime(event["start_date"], "%Y-%m-%d").date()
+                    # Use today's date as the lower bound for upcoming events.
+                    if event_date >= date.today():
+                        upcoming_events.append(event)
+                except (ValueError, KeyError):
+                    continue
+
+            # Define a key to sort events by date and time.
+            def event_sort_key(ev):
+                try:
+                    return datetime.strptime(ev["start_date"] + " " + ev["start_time"], "%Y-%m-%d %H:%M")
+                except Exception:
+                    return datetime.max
+            upcoming_events.sort(key=event_sort_key)
+            filtered_events = upcoming_events
+
+        return render_template("list_events_fragment.html", events=filtered_events)
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+
 
 @app.route("/api/calendar")
 def api_calendar():
@@ -191,6 +210,145 @@ def index():
                            events=today_events,
                            display_date=display_date,
                            display_date_iso=display_date_iso)
+
+@app.route("/calendar.ics")
+def download_ics():
+    # Get the current year
+    current_year = date.today().year
+    # Load all events
+    events = load_events()
+    # Filter events for the current year
+    current_year_events = []
+    for event in events:
+        try:
+            event_date = datetime.strptime(event["start_date"], "%Y-%m-%d").date()
+            if event_date.year == current_year:
+                current_year_events.append(event)
+        except Exception:
+            continue
+
+    # Generate the ICS file content
+    ics_content = generate_ics(current_year_events)
+    response = app.response_class(ics_content, mimetype='text/calendar')
+    response.headers["Content-Disposition"] = f"attachment; filename=calendar_{current_year}.ics"
+    return response
+
+def generate_ics(events):
+    """
+    Generate an ICS file string from a list of event dictionaries.
+    """
+    lines = []
+    lines.append("BEGIN:VCALENDAR")
+    lines.append("VERSION:2.0")
+    lines.append("PRODID:-//BT Calendar//EN")
+    lines.append("CALSCALE:GREGORIAN")
+    lines.append("METHOD:PUBLISH")
+    dtstamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    
+    for event in events:
+        try:
+            # Parse the event's start date and time
+            dtstart = datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M")
+            dtstart_str = dtstart.strftime("%Y%m%dT%H%M%S")
+        except Exception:
+            continue  # skip events with invalid date/time
+        
+        # Determine end date/time if provided; otherwise, default to 1 hour after start
+        if event.get("end_date") and event.get("end_time"):
+            try:
+                dtend = datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M")
+            except Exception:
+                dtend = dtstart + timedelta(hours=1)
+        else:
+            dtend = dtstart + timedelta(hours=1)
+        dtend_str = dtend.strftime("%Y%m%dT%H%M%S")
+        
+        # Create a unique ID for the event
+        uid = str(uuid.uuid4())
+        summary = event.get("title", "No Title")
+        # Escape newlines in the description
+        description = event.get("description", "").replace("\n", "\\n")
+        
+        lines.append("BEGIN:VEVENT")
+        lines.append(f"UID:{uid}")
+        lines.append(f"DTSTAMP:{dtstamp}")
+        lines.append(f"DTSTART:{dtstart_str}")
+        lines.append(f"DTEND:{dtend_str}")
+        lines.append(f"SUMMARY:{summary}")
+        if description:
+            lines.append(f"DESCRIPTION:{description}")
+        lines.append("END:VEVENT")
+    
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(lines)
+
+
+@app.route("/calendar.xml")
+def download_xml():
+    # Get the current year
+    current_year = date.today().year
+    # Load all events
+    events = load_events()
+    # Filter events for the current year
+    current_year_events = []
+    for event in events:
+        try:
+            event_date = datetime.strptime(event["start_date"], "%Y-%m-%d").date()
+            if event_date.year == current_year:
+                current_year_events.append(event)
+        except Exception:
+            continue
+
+    # Generate the XML file content
+    xml_content = generate_xml(current_year_events)
+    response = app.response_class(xml_content, mimetype='application/xml')
+    response.headers["Content-Disposition"] = f"attachment; filename=calendar_{current_year}.xml"
+    return response
+
+def generate_xml(events):
+    """
+    Generate an XML file string from a list of event dictionaries.
+    """
+    lines = []
+    lines.append('<?xml version="1.0" encoding="UTF-8"?>')
+    lines.append("<calendar>")
+    dtstamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    
+    for event in events:
+        try:
+            # Parse the event's start date and time
+            dtstart = datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M")
+            dtstart_str = dtstart.strftime("%Y-%m-%dT%H:%M:%S")
+        except Exception:
+            continue  # skip events with invalid date/time
+        
+        # Determine end date/time if provided; otherwise, default to 1 hour after start
+        if event.get("end_date") and event.get("end_time"):
+            try:
+                dtend = datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M")
+            except Exception:
+                dtend = dtstart + timedelta(hours=1)
+        else:
+            dtend = dtstart + timedelta(hours=1)
+        dtend_str = dtend.strftime("%Y-%m-%dT%H:%M:%S")
+        
+        # Create a unique ID for the event
+        uid = str(uuid.uuid4())
+        summary = escape(event.get("title", "No Title"))
+        description = escape(event.get("description", ""))
+        
+        lines.append("  <event>")
+        lines.append(f"    <uid>{uid}</uid>")
+        lines.append(f"    <dtstamp>{dtstamp}</dtstamp>")
+        lines.append(f"    <dtstart>{dtstart_str}</dtstart>")
+        lines.append(f"    <dtend>{dtend_str}</dtend>")
+        lines.append(f"    <summary>{summary}</summary>")
+        if description:
+            lines.append(f"    <description>{description}</description>")
+        lines.append("  </event>")
+    
+    lines.append("</calendar>")
+    return "\n".join(lines)
 
 if __name__ == "__main__":
     app.run(debug=True)

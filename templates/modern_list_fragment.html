@@ -25,22 +25,22 @@
         <div class="add-calendar-dropdown" style="display: none;">
           <ul class="dropdown-list">
             <li class="dropdown-item">
-              <a href="https://calendar.google.com/calendar/r?cid=https%3A%2F%2Flocalhost%2Fcalendar.ics" class="download-option" data-type="google">Google Calendar</a>
+              <a href="https://calendar.google.com/calendar/r?cid=https%3A%2F%2Fbrooklyntabdev.wpengine.com%2Fcalendar.ics" class="download-option" data-type="google">Google Calendar</a>
             </li>
             <li class="dropdown-item">
-              <a href="webcal://localhost/calendar.ics" class="download-option" data-type="apple">Apple Calendar</a>
+              <a href="webcal://btcalendar-stg.onrender.com/calendar.ics" class="download-option" data-type="apple">Apple Calendar</a>
             </li>
             <li class="dropdown-item">
-              <a href="webcal://localhost/calendar.ics" class="download-option" data-type="outlook">Outlook</a>
+              <a href="webcal://btcalendar-stg.onrender.com/calendar.ics" class="download-option" data-type="outlook">Outlook</a>
             </li>
             <li class="dropdown-item">
-              <a href="#" class="download-option" data-type="copy">Copy Import URL</a>
+              <a href="https://btcalendar-stg.onrender.com/calendar.ics" class="download-option" data-type="copy">Copy Import URL</a>
             </li>
             <li class="dropdown-item">
-              <a href="https://btcalendar-stg.onrender.com/calendar.ics" class="download-option" data-type="download-ics" download>Download ICS</a>
-            </li>
+              <a href="{{ url_for('download_ics') }}" class="download-option" data-type="download-ics" download>Download ICS</a>
+            </li>              
             <li class="dropdown-item">
-              <a href="https://btcalendar-stg.onrender.com/calendar.xml" class="download-option" data-type="download-xml" download>Download XML</a>
+              <a href="{{ url_for('download_xml') }}" class="download-option" data-type="download-xml" download>Download XML</a>
             </li>
           </ul>
         </div>
@@ -189,4 +189,41 @@
     formatEventDates();
     formatEventTimes();
   });
+
+  document.querySelectorAll('.download-option').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        var type = this.getAttribute('data-type');
+        // For options that do not require custom handling, let them proceed.
+        if (type === "apple" || type === "outlook" || type === "google" ||
+            type === "download-ics" || type === "download-xml") {
+          return;
+        }
+        if (type === "copy") {
+          e.preventDefault();
+          // Build the proper ICS URL using the current origin.
+          var importUrl = window.location.origin + "/calendar.ics";
+          navigator.clipboard.writeText(importUrl).then(function() {
+            var addCalButton = document.querySelector('.add-calendar-button');
+            var originalText = addCalButton.innerHTML;
+            addCalButton.innerHTML = "Link copied to clipboard";
+            setTimeout(function() {
+              addCalButton.innerHTML = originalText;
+            }, 2000);
+          }).catch(function(err) {
+            console.error("Failed to copy text: ", err);
+          });
+          var dropdown = this.closest('.add-calendar-dropdown');
+          if (dropdown) {
+            dropdown.style.display = 'none';
+          }
+          return;
+        }
+        e.preventDefault();
+        alert("Selected " + type + " calendar option.");
+        var dropdown = this.closest('.add-calendar-dropdown');
+        if (dropdown) {
+          dropdown.style.display = 'none';
+        }
+      });
+    });
 </script>
