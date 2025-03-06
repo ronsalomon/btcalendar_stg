@@ -411,13 +411,19 @@
     document.querySelectorAll('.toggle-button').forEach(function(link) {
       link.addEventListener('click', function(e) {
         e.preventDefault();
+        // Get the selected view text
+        var selectedViewText = this.textContent.trim() + ' <span class="arrow">▼</span>';
+        // Update all views-toggle-button elements so both headers show the updated label
+        document.querySelectorAll('.views-toggle-button').forEach(function(button) {
+          button.innerHTML = selectedViewText;
+        });
+
         var view = this.getAttribute('data-view');
         var layout = this.getAttribute('data-layout');
-  
+
         if (view === 'calendar') {
           document.getElementById('calendarView').style.display = 'block';
           document.getElementById('listView').style.display = 'none';
-          // Show the static header
           document.getElementById('staticHeader').style.display = 'flex';
           var listHeader = document.querySelector('.list-view-header');
           if (listHeader) {
@@ -426,7 +432,6 @@
         } else if (view === 'list') {
           document.getElementById('calendarView').style.display = 'none';
           document.getElementById('listView').style.display = 'block';
-          // Hide the calendar header
           document.getElementById('staticHeader').style.display = 'none';
           var listHeader = document.querySelector('.list-view-header');
           if (listHeader) {
@@ -434,18 +439,15 @@
           }
           initializeModernListHeader();
         }
-  
-        if (layout) {
-          console.log("Selected layout: " + layout);
-          // Additional layout switching code can go here
-        }
-  
-        // Close any open dropdown
+
+        // Close any open dropdowns
         document.querySelectorAll('.views-dropdown').forEach(function(dd) {
           dd.style.display = 'none';
         });
       });
     });
+
+
   
     // ================================
     // Add-to-Calendar Dropdown
