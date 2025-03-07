@@ -109,6 +109,12 @@
                   </a>
                 </span>
               </li>
+              <li class="dropdown-item">
+                <span class="calendar-icon">
+                  <a href="#" class="toggle-button" data-view="row">
+                    <i class="fa-solid fa-list" style="padding-right: 5px; font-size:15px;"></i>Modern Row
+                  </a>
+                </span>
               </li>
             </ul>
           </div>
@@ -118,6 +124,7 @@
     
     <!-- Content Area -->
     <div id="viewContainer" style="margin-top:20px;">
+
       <!-- Monthly Calendar View -->
       <div id="calendarView">
         {% include "calendar_fragment.html" %}
@@ -127,10 +134,15 @@
       <div id="listView" style="display: none;">
         {% include "modern_list_fragment.html" %}
       </div>
+
+      <!-- Modern Row View (initially hidden) -->
+      <div id="rowView" style="display: none;">
+        {% include "modern_row_fragment.html" %}
+      </div>
     </div>
   </div>
   
-  <!-- JavaScript -->
+
   <script>
     // ================================
     // Calendar View Functionality
@@ -178,6 +190,8 @@
       updateCalendar(currentYear, currentMonth);
     });
   
+
+
     // ================================
     // NEW: Month Popup Functionality
     // ================================
@@ -252,9 +266,10 @@
       monthDropdown.style.display = 'none';
     });
   
-    // ================================
-    // Modern List Header (Day Navigation)
-    // ================================
+
+    // ====================================
+    // Modern List Header (Day Navigation) 
+    // ====================================
     var currentListDate = new Date();
   
     function formatDateForAPI(date) {
@@ -289,6 +304,49 @@
         .catch(error => console.error("Error fetching events:", error));
     }
   
+
+    // ====================================
+    // Modern Row Header (Day Navigation) 
+    // ====================================
+    var currentRowDate = new Date();
+  
+    function formatDateForAPIRow(date) {
+      // Format date as YYYY-MM-DD for API calls
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  
+    function updateRowDateHeader() {
+      var options = { weekday: 'short', month: 'long', day: 'numeric' };
+      var rowDateElem = document.getElementById('rowDate');
+      if (rowDateElem) {
+        rowDateElem.textContent = currentRowDate.toLocaleDateString('en-US', options);
+      }
+    }
+  
+    function updateRowEvents() {
+      const formattedDateRow = formatDateForAPIRow(currentRowDate);
+      fetch(`/api/row_events/${formattedDateRow}`)
+        .then(response => response.text())
+        .then(html => {
+          // Only replace the events part, not the entire row view
+          const eventsContainer = document.querySelector('.modern-row-events');
+          if (eventsContainer) {
+            eventsContainer.outerHTML = html;
+          }
+          // Format dates and times for the new events
+          formatEventDatesAndTimes();
+        })
+        .catch(error => console.error("Error fetching events:", error));
+    }
+  
+
+    // ====================================
+    // Format Dates & Times
+    // ====================================
+
     function formatEventDatesAndTimes() {
       // Format all event dates
       document.querySelectorAll('.event-date').forEach(function(element) {
@@ -328,6 +386,11 @@
       });
     }
   
+
+    // ====================================
+    // Initialize List Header
+    // ====================================
+
     function initializeModernListHeader() {
       // Reset to today when switching to Modern List view.
       currentListDate = new Date();
@@ -362,6 +425,46 @@
       }
     }
   
+
+    // ====================================
+    // Initialize Row Header
+    // ====================================
+
+    function initializeModernRowHeader() {
+      // Reset to today when switching to Modern List view.
+      currentRowDate = new Date();
+      updateRowDateHeader();
+      updateRowEvents();
+  
+      var rowChevronLeft = document.getElementById('rowChevronLeft');
+      var rowChevronRight = document.getElementById('rowChevronRight');
+  
+      if (rowChevronLeft) {
+        // Remove any existing event listeners
+        rowChevronLeft.replaceWith(rowChevronLeft.cloneNode(true));
+        rowChevronLeft = document.getElementById('rowChevronLeft');
+  
+        rowChevronLeft.addEventListener('click', function() {
+          currentRowDate.setDate(currentRowDate.getDate() - 1);
+          updateRowDateHeader();
+          updateRowEvents();
+        });
+      }
+  
+      if (rowChevronRight) {
+        // Remove any existing event listeners
+        rowChevronRight.replaceWith(rowChevronRight.cloneNode(true));
+        rowChevronRight = document.getElementById('rowChevronRight');
+  
+          rowChevronRight.addEventListener('click', function() {
+          currentRowDate.setDate(currentRowDate.getDate() + 1);
+          updateRowDateHeader();
+          updateRowEvents();
+        });
+      }
+    }
+  
+
     // ================================
     // Views Dropdown Functionality
     // ================================
@@ -401,17 +504,30 @@
         if (view === 'calendar') {
           document.getElementById('calendarView').style.display = 'block';
           document.getElementById('listView').style.display = 'none';
+          document.getElementById('rowView').style.display = 'none';
           document.getElementById('staticHeader').style.display = 'flex';
           var listHeader = document.querySelector('.list-view-header');
+          var rowHeader = document.querySelector('.row-view-header');
           if (listHeader) { listHeader.style.display = 'none'; }
+          if (rowHeader) { rowHeader.style.display = 'none'; }
         } else if (view === 'list') {
           document.getElementById('calendarView').style.display = 'none';
           document.getElementById('listView').style.display = 'block';
+          document.getElementById('rowView').style.display = 'none';
           document.getElementById('staticHeader').style.display = 'none';
           var listHeader = document.querySelector('.list-view-header');
           if (listHeader) { listHeader.style.display = 'flex'; }
           initializeModernListHeader();
-        } 
+        } else if (view === 'row') {
+          document.getElementById('calendarView').style.display = 'none';
+          document.getElementById('listView').style.display = 'none';
+          document.getElementById('rowView').style.display = 'block';
+          document.getElementById('staticHeader').style.display = 'none';
+          var rowHeader = document.querySelector('.row-view-header');
+          if (rowHeader) { rowHeader.style.display = 'flex'; }
+          initializeModernRowHeader();
+        } // <-- Added missing closing bracket for the else-if block
+
         // Close any open dropdowns
         document.querySelectorAll('.views-dropdown').forEach(function(dd) {
           dd.style.display = 'none';

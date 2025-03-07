@@ -1,0 +1,40 @@
+<!-- Just the events row without the header -->
+<div class="modern-row-events">
+    {% for er in events %}
+      <div class="modern-row-event">
+        <div class="modern-row-event-content">
+          <div class="event-title"><span>{{ er.title }}</span></div>
+          <div class="event-date-time">
+            <span class="date-icon">
+              <i class="fa fa-calendar" style="font-size:15px;color:#506688;"></i>
+            </span>
+            <span class="event-date" data-date="{{ er.start_date }}">
+              {# Parse the stored date (assumed in YYYY-MM-DD format) and format it as "Month Day" #}
+              {% set edate = datetime.strptime(er.start_date, "%Y-%m-%d") %}
+              {{ edate.strftime("%B") }} {{ edate.day }}
+            </span>
+            <span class="time-icon">
+              <i class="fa-solid fa-clock" style="font-size: 15px; color:#506688;"></i>
+            </span>
+            <span class="event-time" data-time="{{ er.start_time }}">
+              {# Parse the stored time (assumed in 24-hour HH:MM format) and format it as 12-hour with am/pm #}
+              {% set etime = datetime.strptime(er.start_time, "%H:%M") %}
+              {{ etime.strftime("%I:%M%p").lstrip("0").lower() }}
+            </span>
+          </div>
+          
+          <p class="event-description">
+            {{ er.description }}
+          </p>
+          <div class="event-date-time">
+            <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>
+          </div>
+        </div>
+        {% if er.image %}
+        <div class="modern-row-event-image">
+          <img src="{{ er.image }}" alt="{{ er.title }}">
+        </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>

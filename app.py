@@ -135,6 +135,52 @@ def list_events(date_str):
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
 
 
+@app.route("/api/row_events/<date_str>")
+def row_events(date_str):
+    """
+    Returns the events content for a given date.
+    If there are no events for the selected day, returns all upcoming events
+    (events with a date >= today's date), sorted by date and time.
+    """
+    try:
+        target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+        all_events = load_events()
+        # First, filter events that occur exactly on the target date.
+        filtered_events_row = []
+        for event in all_events:
+            try:
+                event_date = datetime.strptime(event["start_date"], "%Y-%m-%d").date()
+                if event_date == target_date:
+                    filtered_events_row.append(event)
+            except (ValueError, KeyError):
+                continue
+
+        # If no events on the selected day, show upcoming events (from today onward).
+        if not filtered_events_row:
+            upcoming_events = []
+            for event in all_events:
+                try:
+                    event_date = datetime.strptime(event["start_date"], "%Y-%m-%d").date()
+                    # Use today's date as the lower bound for upcoming events.
+                    if event_date >= date.today():
+                        upcoming_events.append(event)
+                except (ValueError, KeyError):
+                    continue
+
+            # Define a key to sort events by date and time.
+            def event_sort_key(ev):
+                try:
+                    return datetime.strptime(ev["start_date"] + " " + ev["start_time"], "%Y-%m-%d %H:%M")
+                except Exception:
+                    return datetime.max
+            upcoming_events.sort(key=event_sort_key)
+            filtered_events_row = upcoming_events
+
+        return render_template("row_events_fragment.html", events=filtered_events_row)
+    except ValueError:
+        return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    
+
 @app.route("/api/calendar")
 def api_calendar():
     """
@@ -237,6 +283,7 @@ def download_ics():
     response.headers["Content-Disposition"] = f"attachment; filename=calendar_{current_year}.ics"
     return response
 
+
 def generate_ics(events):
     """
     Generate an ICS file string from a list of event dictionaries.
@@ -308,6 +355,7 @@ def download_xml():
     response = app.response_class(xml_content, mimetype='application/xml')
     response.headers["Content-Disposition"] = f"attachment; filename=calendar_{current_year}.xml"
     return response
+
 
 def generate_xml(events):
     """

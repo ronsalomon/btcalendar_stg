@@ -1,19 +1,18 @@
-<!--List View Header-->
+<!--Row View Header-->
 <div class="calendar-container">
-  <div class="list-view-header">
-    <div class="left-section-list">
-      <div class="modern-list-header">
-        <span class="chevron-list chevron-left-list" id="listChevronLeft">&#10094;</span>
-        <span class="date-name" id="listDate" data-date="{{ display_date_iso }}">{{ display_date_iso }}</span>
-        <span class="chevron-list chevron-right-list" id="listChevronRight">&#10095;</span>
+  <div class="row-view-header">
+    <div class="left-section-row">
+      <div class="modern-row-header">
+        <span class="chevron chevron-left" id="rowChevronLeft">&#10094;</span>
+        <span class="date-name" id="rowDate" data-date="{{ display_date_iso }}">{{ display_date_iso }}</span>
+        <span class="chevron chevron-right" id="rowChevronRight">&#10095;</span>
       </div>
     </div>
-    <div class="right-section-list">
+    <div class="right-section-row">
       <div class="search-container">
         <input type="text" placeholder="Search" class="search-box">
         <span class="search-icon"><i class="fa-solid fa-magnifying-glass" style="color: #223e49; font-size:14px; opacity: .7;"></i></span>
       </div>
-
       <!-- Add-to-Calendar Dropdown -->
       <div class="add-calendar-dropdown-container">
         <button class="action-button add-calendar-button" id="addCalendarButton">
@@ -46,7 +45,6 @@
           </ul>
         </div>
       </div>
-      
       <!-- Views Dropdown -->
       <div class="view-dropdown-container">
         <button class="action-button views-toggle-button">
@@ -79,38 +77,38 @@
     </div>
   </div>
 
-  <!-- modern_list_fragment.html -->
-  <div class="modern-list-events">
-    {% for ev in events %}
-      <div class="modern-list-event">
-        {% if ev.image %}
-          <div class="modern-list-event-image">
-            <img src="{{ ev.image }}" alt="{{ ev.title }}">
-          </div>
-        {% endif %}
-        <div class="modern-list-event-content">
-          <div class="event-title"><span>{{ ev.title }}</span></div>
+  <!-- modern_row_fragment.html -->
+  <div class="modern-row-events">
+    {% for er in events %}
+      <div class="modern-row-event">
+        <div class="modern-row-event-content">
+          <div class="event-title"><span>{{ er.title }}</span></div>
           <div class="event-date-time">
             <span class="date-icon">
               <i class="fa fa-calendar" style="font-size:15px;color:#506688;"></i>
             </span>
-            <span class="event-date" data-date="{{ ev.start_date }}">
-              {{ datetime.strptime(ev.start_date, "%Y-%m-%d").strftime("%B ") }}{{ datetime.strptime(ev.start_date, "%Y-%m-%d").day }}
+            <span class="event-date" data-date="{{ er.start_date }}">
+              {{ datetime.strptime(er.start_date, "%Y-%m-%d").strftime("%B ") }}{{ datetime.strptime(er.start_date, "%Y-%m-%d").day }}
             </span>
             <span class="time-icon">
               <i class="fa-solid fa-clock" style="font-size: 15px; color:#506688;"></i>
             </span>
-            <span class="event-time" data-time="{{ ev.start_time }}">
-              {{ ev.start_time }}
+            <span class="event-time" data-time="{{ er.start_time }}">
+              {{ er.start_time }}
             </span>
           </div>          
           <p class="event-description">
-            {{ ev.description }}
+            {{ er.description }}
           </p>
           <div class="event-date-time">
             <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>
           </div>
         </div>
+        {% if er.image %}
+        <div class="modern-row-event-image">
+          <img src="{{ er.image }}" alt="{{ er.title }}">
+        </div>
+        {% endif %}
       </div>
     {% endfor %}
   </div>
