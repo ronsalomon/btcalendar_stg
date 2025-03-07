@@ -87,9 +87,11 @@ body {
   cursor: pointer;
   margin-left: 0.5rem;
   border-radius: 6px;
+  color:#506688;
 }
 .action-button:hover {
-  background: #f0f0f0;
+  background: transparent;
+  border-color: #506688;
 }
 .arrow {
   font-size: 0.7rem;
@@ -421,6 +423,13 @@ body {
   width: 200px;
   z-index: 1000;
 }
+
+.views-toggle-button {
+  background: transparent;
+  border-color: #506688;
+  color: #506688;
+}
+
 .dropdown-list {
   list-style: none;
   padding: 0;
@@ -534,6 +543,61 @@ body {
   margin-left: 20px;
   opacity: .7;
 }
+
+
+.event-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+.event-date-time {
+  font-size: 0.95rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+.event-description {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* Icon Styling */
+.date-icon,
+.time-icon {
+  margin-right: 0.3rem;
+  color: #506688;
+  font-size: 1rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .modern-row-event {
+    flex-direction: column;
+  }
+  .modern-row-event-image {
+    width: 100%;
+    padding: 0;
+  }
+  .modern-row-event-image img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 4px 4px 0 0;
+  }
+  .modern-row-event-content {
+    padding: 1rem;
+  }
+  .modern-row-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .modern-row-header .right-section {
+    margin-top: 0.5rem;
+  }
+}
+
+
+
+
 
 /* Responsive Styles */
 @media screen and (max-width: 1024px) {

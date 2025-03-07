@@ -28,6 +28,7 @@ def save_events(events):
     with open(EVENTS_FILE, "w") as f:
         json.dump(events, f, indent=2)
 
+
 @app.route("/api/events", methods=["GET", "POST"])
 def events_api():
     """
@@ -57,6 +58,7 @@ def events_api():
         save_events(events)
         return jsonify({"status": "success", "event": new_event}), 201
 
+
 @app.route("/api/events/date/<date_str>")
 def events_by_date(date_str):
     """
@@ -85,6 +87,7 @@ def events_by_date(date_str):
         return jsonify(filtered_events)
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+
 
 @app.route("/api/list_events/<date_str>")
 def list_events(date_str):
@@ -179,6 +182,7 @@ def index():
     month_days = cal.monthdatescalendar(year, month)
 
     events = load_events()
+
     events_by_day = {}
     for ev in events:
         try:

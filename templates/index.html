@@ -92,45 +92,23 @@
         </div>
         <!-- Views Dropdown -->
         <div class="view-dropdown-container">
-          <button class="action-button views-toggle-button">Views <span class="arrow">▼</span></button>
+          <button class="action-button views-toggle-button">
+              <i class="fa-regular fa-calendar-days" style="padding-right: 5px; font-size:15px; opacity: .5;"></i>Month<span class="arrow">▼</span>
+          </button>
           <div class="view-dropdown views-dropdown" style="display: none;">
             <ul class="dropdown-list">
               <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-view="calendar">Month</a>
+                <a href="#" class="toggle-button" data-view="calendar">
+                  <i class="fa-regular fa-calendar-days" style="padding-right: 5px; font-size:15px; opacity: .5;"></i>Month
+                </a>
               </li>
               <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-view="list">Modern List</a>
+                <span class="calendar-icon">
+                  <a href="#" class="toggle-button" data-view="list">
+                    <i class="fa-solid fa-list" style="padding-right: 5px; font-size:15px;"></i>Modern List
+                  </a>
+                </span>
               </li>
-              <!-- Additional layout options (if needed) -->
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="posterboard">Posterboard</a>
-              </li>
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="tile">Tile</a>
-              </li>
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="stream">Stream</a>
-              </li>
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="modern-row">Modern Row</a>
-              </li>
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="clean-list">Clean List</a>
-              </li>
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="clean-row">Clean Row</a>
-              </li>
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="agenda">Agenda</a>
-              </li>
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="week">Week</a>
-              </li>
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="month-layout">Month Layout</a>
-              </li>
-              <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-layout="map">Map</a>
               </li>
             </ul>
           </div>
@@ -411,9 +389,8 @@
     document.querySelectorAll('.toggle-button').forEach(function(link) {
       link.addEventListener('click', function(e) {
         e.preventDefault();
-        // Get the selected view text
+        // Update toggle button text
         var selectedViewText = this.textContent.trim() + ' <span class="arrow">▼</span>';
-        // Update all views-toggle-button elements so both headers show the updated label
         document.querySelectorAll('.views-toggle-button').forEach(function(button) {
           button.innerHTML = selectedViewText;
         });
@@ -426,26 +403,22 @@
           document.getElementById('listView').style.display = 'none';
           document.getElementById('staticHeader').style.display = 'flex';
           var listHeader = document.querySelector('.list-view-header');
-          if (listHeader) {
-            listHeader.style.display = 'none';
-          }
+          if (listHeader) { listHeader.style.display = 'none'; }
         } else if (view === 'list') {
           document.getElementById('calendarView').style.display = 'none';
           document.getElementById('listView').style.display = 'block';
           document.getElementById('staticHeader').style.display = 'none';
           var listHeader = document.querySelector('.list-view-header');
-          if (listHeader) {
-            listHeader.style.display = 'flex';
-          }
+          if (listHeader) { listHeader.style.display = 'flex'; }
           initializeModernListHeader();
-        }
-
+        } 
         // Close any open dropdowns
         document.querySelectorAll('.views-dropdown').forEach(function(dd) {
           dd.style.display = 'none';
         });
       });
     });
+
 
 
   
@@ -506,12 +479,7 @@
           dropdown.style.display = 'none';
         }
       });
-    });
-  
-    // On initial page load, format any existing event dates/times in the calendar
-    document.addEventListener('DOMContentLoaded', function() {
-      formatEventDatesAndTimes();
-    });
+    });    
   </script>  
 </body>
 </html>
