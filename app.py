@@ -3,7 +3,7 @@ import json
 import calendar
 import uuid
 from datetime import datetime, date, timedelta
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from xml.sax.saxutils import escape
 
 app = Flask(__name__)
@@ -401,6 +401,14 @@ def generate_xml(events):
     
     lines.append("</calendar>")
     return "\n".join(lines)
+
+@app.route('/<view>')
+def spa(view):
+    # Allow only known views; otherwise, you can redirect or show a 404.
+    if view in ['modern_row', 'modern_list', 'calendar']:
+        return render_template("index.html")
+    else:
+        return redirect(url_for('index'))
 
 if __name__ == "__main__":
     app.run(debug=True)
