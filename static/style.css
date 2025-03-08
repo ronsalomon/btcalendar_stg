@@ -542,6 +542,7 @@ h4 {
   background-color: #f9f9f9;
   margin: 25px 0;
   border: 1px solid #f9f9f9;
+  border-radius: 8px;
 }
 .modern-row-weekday {
   display: flex;
@@ -659,6 +660,7 @@ h4 {
   }
   .modern-list-event {
     flex-direction: column;
+    border-radius: 8px;
   }
   .modern-list-event-image img {
     width: 100%;
