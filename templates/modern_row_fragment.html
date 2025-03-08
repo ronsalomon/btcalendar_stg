@@ -13,6 +13,7 @@
         <input type="text" placeholder="Search" class="search-box">
         <span class="search-icon"><i class="fa-solid fa-magnifying-glass" style="color: #223e49; font-size:14px; opacity: .7;"></i></span>
       </div>
+
       <!-- Add-to-Calendar Dropdown -->
       <div class="add-calendar-dropdown-container">
         <button class="action-button add-calendar-button" id="addCalendarButton">
@@ -45,6 +46,7 @@
           </ul>
         </div>
       </div>
+
       <!-- Views Dropdown -->
       <div class="view-dropdown-container">
         <button class="action-button views-toggle-button">
@@ -81,6 +83,10 @@
   <div class="modern-row-events">
     {% for er in events %}
       <div class="modern-row-event">
+        <div class="modern-row-weekday">
+          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").strftime("%a")|upper }}</span>
+          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").day }}</span>                 
+        </div>
         <div class="modern-row-event-content">
           <div class="event-title"><span>{{ er.title }}</span></div>
           <div class="event-date-time">
@@ -113,6 +119,7 @@
     {% endfor %}
   </div>
 </div>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Parse a "YYYY-MM-DD" string into a local Date object.

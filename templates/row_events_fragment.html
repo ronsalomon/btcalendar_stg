@@ -2,6 +2,10 @@
 <div class="modern-row-events">
     {% for er in events %}
       <div class="modern-row-event">
+        <div class="modern-row-weekday">
+          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").strftime("%a")|upper }}</span>
+          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").day }}</span>                  
+        </div>
         <div class="modern-row-event-content">
           <div class="event-title"><span>{{ er.title }}</span></div>
           <div class="event-date-time">

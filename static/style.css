@@ -541,6 +541,12 @@ body {
   margin: 25px 0;
   border: 1px solid #f9f9f9;
 }
+.modern-row-weekday {
+  display: flex;
+  flex-direction: column;
+  margin: 25px;
+  align-items: center;
+}
 .modern-row-event-image img {
   width: 322px;
   height: auto;
