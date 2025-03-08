@@ -5,7 +5,9 @@ body {
   margin: 0;
   padding: 0;
 }
-
+h4 {
+  font-weight: 100;
+}
 /* Navigation */
 .nav-bar {
   background: #e0e0e0;
@@ -585,8 +587,6 @@ body {
   opacity: 0.7;
 }
 .event-title {
-  font-size: 1.2rem;
-  font-weight: bold;
   margin-bottom: 0.5rem;
 }
 
