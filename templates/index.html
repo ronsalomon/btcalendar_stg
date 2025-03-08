@@ -98,20 +98,20 @@
           <div class="view-dropdown views-dropdown" style="display: none;">
             <ul class="dropdown-list">
               <li class="dropdown-item">
-                <a href="#" class="toggle-button" data-view="calendar">
+                <a href="calendar" class="toggle-button" data-view="calendar">
                   <i class="fa-regular fa-calendar-days" style="padding-right: 5px; font-size:15px; opacity: .5;"></i>Month
                 </a>
               </li>
               <li class="dropdown-item">
                 <span class="calendar-icon">
-                  <a href="#" class="toggle-button" data-view="list">
+                  <a href="modern_list" class="toggle-button" data-view="modern_list">
                     <i class="fa-solid fa-list" style="padding-right: 5px; font-size:15px;"></i>Modern List
                   </a>
                 </span>
               </li>
               <li class="dropdown-item">
                 <span class="calendar-icon">
-                  <a href="#" class="toggle-button" data-view="row">
+                  <a href="modern_row" class="toggle-button" data-view="modern_row">
                     <i class="fa-solid fa-list" style="padding-right: 5px; font-size:15px;"></i>Modern Row
                   </a>
                 </span>
@@ -488,44 +488,36 @@
       });
     });
   
-    // Handle view toggle clicks from the dropdown
-    document.querySelectorAll('.toggle-button').forEach(function(link) {
-      link.addEventListener('click', function(e) {
-          e.preventDefault();
-          var view = this.getAttribute('data-view');
-          // Update the URL to include the selected view.
-          history.pushState(null, '', '/' + view);
-          
-          // Change the visible view accordingly.
-          if (view === 'calendar') {
-              document.getElementById('calendarView').style.display = 'block';
-              document.getElementById('listView').style.display = 'none';
-              document.getElementById('rowView').style.display = 'none';
-              document.getElementById('staticHeader').style.display = 'flex';
-          } else if (view === 'list') {
-              document.getElementById('calendarView').style.display = 'none';
-              document.getElementById('listView').style.display = 'block';
-              document.getElementById('rowView').style.display = 'none';
-              document.getElementById('staticHeader').style.display = 'none';
-              // Initialize list header if needed.
-              initializeModernListHeader();
-          } else if (view === 'row') {
-              document.getElementById('calendarView').style.display = 'none';
-              document.getElementById('listView').style.display = 'none';
-              document.getElementById('rowView').style.display = 'block';
-              document.getElementById('staticHeader').style.display = 'none';
-              // Initialize row header if needed.
-              initializeModernRowHeader();
-          }
-          // Close any open dropdowns.
-          document.querySelectorAll('.views-dropdown').forEach(function(dd) {
-              dd.style.display = 'none';
-          });
-      });
+
+    // On page load, determine which view should be active.
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get the default view from Flask. If not provided, fallback to 'calendar'
+      var defaultView = "{{ default_view|default('calendar') }}".trim();
+      console.log("Default view from template:", defaultView);
+
+      if (defaultView === 'calendar') {
+        document.getElementById('calendarView').style.display = 'block';
+        document.getElementById('listView').style.display = 'none';
+        document.getElementById('rowView').style.display = 'none';
+        document.getElementById('staticHeader').style.display = 'flex';
+      } else if (defaultView === 'modern_list') {
+        document.getElementById('calendarView').style.display = 'none';
+        document.getElementById('listView').style.display = 'block';
+        document.getElementById('rowView').style.display = 'none';
+        document.getElementById('staticHeader').style.display = 'none';
+        if (typeof initializeModernListHeader === 'function') {
+          initializeModernListHeader();
+        }
+      } else if (defaultView === 'modern_row') {
+        document.getElementById('calendarView').style.display = 'none';
+        document.getElementById('listView').style.display = 'none';
+        document.getElementById('rowView').style.display = 'block';
+        document.getElementById('staticHeader').style.display = 'none';
+        if (typeof initializeModernRowHeader === 'function') {
+          initializeModernRowHeader();
+        }
+      }
     });
-
-
-
 
   
     // ================================

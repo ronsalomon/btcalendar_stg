@@ -402,13 +402,52 @@ def generate_xml(events):
     lines.append("</calendar>")
     return "\n".join(lines)
 
+
 @app.route('/<view>')
 def spa(view):
-    # Allow only known views; otherwise, you can redirect or show a 404.
-    if view in ['modern_row', 'modern_list', 'calendar']:
-        return render_template("index.html")
-    else:
-        return redirect(url_for('index'))
+    if view not in ['modern_row', 'modern_list', 'calendar']:
+        view = 'calendar'
+    today = date.today()
+    year = today.year
+    month = today.month
+    cal = calendar.Calendar(firstweekday=6)
+    month_days = cal.monthdatescalendar(year, month)
+    events = load_events()
+    events_by_day = {}
+    for ev in events:
+        try:
+            ev_date = datetime.strptime(ev["start_date"], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if ev_date.year == year and ev_date.month == month:
+            events_by_day.setdefault(ev_date.day, []).append(ev)
+    
+    today_events = []
+    for ev in events:
+        try:
+            ev_date = datetime.strptime(ev["start_date"], "%Y-%m-%d").date()
+            if ev_date == today:
+                today_events.append(ev)
+        except ValueError:
+            continue
+
+    display_date = today.strftime("%a, %B %d")
+    display_date_iso = today.strftime("%Y-%m-%d")
+    
+    return render_template("index.html",
+                           year=year,
+                           month=month,
+                           month_name=calendar.month_name[month],
+                           month_days=month_days,
+                           events_monthly=events_by_day,
+                           today=today,
+                           events=today_events,
+                           display_date=display_date,
+                           display_date_iso=display_date_iso,
+                           default_view=view)
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)
