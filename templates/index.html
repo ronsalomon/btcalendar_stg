@@ -65,7 +65,7 @@
             <span class="calendar-icon"><span class="date-icon">
               <i class="fa-regular fa-calendar-days" style="font-size:15px;color:#506688; opacity: .5;"></i>
             </span>
-            </span> Add To Calendar <span class="arrow">▼</span>
+            </span> Add To Calendar <span class="arrow"><i class="fa-solid fa-caret-down" style="font-size:15px;"></i></span>
           </button>
           <div class="add-calendar-dropdown" style="display: none;">
             <ul class="dropdown-list">
@@ -93,7 +93,9 @@
         <!-- Views Dropdown -->
         <div class="view-dropdown-container">
           <button class="action-button views-toggle-button">
-              <i class="fa-regular fa-calendar-days" style="padding-right: 5px; font-size:15px; opacity: .5;"></i>Month<span class="arrow">▼</span>
+              <i class="fa-regular fa-calendar-days" style="padding-right: 5px; font-size:15px; opacity: .5;"></i>
+              Month
+              <span class="arrow"><i class="fa-solid fa-caret-down" style="font-size:15px;"></i></span>
           </button>
           <div class="view-dropdown views-dropdown" style="display: none;">
             <ul class="dropdown-list">
@@ -487,56 +489,7 @@
         }
       });
     });
-  
-
-    // On page load, determine which view should be active.
-    document.querySelectorAll('.toggle-button').forEach(function(link) {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
-        // Update toggle button text
-        var selectedViewText = this.textContent.trim() + ' <span class="arrow">▼</span>';
-        document.querySelectorAll('.views-toggle-button').forEach(function(button) {
-          button.innerHTML = selectedViewText;
-        });
-        
-        var view = this.getAttribute('data-view');
-
-        if (view === 'calendar') {
-          document.getElementById('calendarView').style.display = 'block';
-          document.getElementById('listView').style.display = 'none';
-          document.getElementById('rowView').style.display = 'none';
-          document.getElementById('staticHeader').style.display = 'flex';
-          var listHeader = document.querySelector('.list-view-header');
-          var rowHeader = document.querySelector('.row-view-header');
-          if (listHeader) { listHeader.style.display = 'none'; }
-          if (rowHeader) { rowHeader.style.display = 'none'; }
-        } else if (view === 'modern_list') {
-          document.getElementById('calendarView').style.display = 'none';
-          document.getElementById('listView').style.display = 'block';
-          document.getElementById('rowView').style.display = 'none';
-          document.getElementById('staticHeader').style.display = 'none';
-          var listHeader = document.querySelector('.list-view-header');
-          if (listHeader) { listHeader.style.display = 'flex'; }
-          initializeModernListHeader();
-        } else if (view === 'modern_row') {
-          document.getElementById('calendarView').style.display = 'none';
-          document.getElementById('listView').style.display = 'none';
-          document.getElementById('rowView').style.display = 'block';
-          document.getElementById('staticHeader').style.display = 'none';
-          var rowHeader = document.querySelector('.row-view-header');
-          if (rowHeader) { rowHeader.style.display = 'flex'; }
-          initializeModernRowHeader();
-        }
-        
-        // Close any open dropdowns
-        document.querySelectorAll('.views-dropdown').forEach(function(dd) {
-          dd.style.display = 'none';
-        });
-      });
-    });
-
-
-  
+    
     // ================================
     // Add-to-Calendar Dropdown
     // ================================
@@ -594,7 +547,52 @@
           dropdown.style.display = 'none';
         }
       });
-    });    
+    });
+    
+
+    window.addEventListener('load', function() {
+      // Retrieve the injected default view value.
+      var defaultView = "{{ default_view|default('calendar') }}".trim();
+      console.log("Default view from template:", defaultView);
+
+      // Update view display (as before)
+      document.getElementById('calendarView').style.display = 'none';
+      document.getElementById('listView').style.display = 'none';
+      document.getElementById('rowView').style.display = 'none';
+      document.getElementById('staticHeader').style.display = 'none';
+
+      if (defaultView === 'calendar') {
+        document.getElementById('calendarView').style.display = 'block';
+        document.getElementById('staticHeader').style.display = 'flex';
+      } else if (defaultView === 'modern_list') {
+        document.getElementById('listView').style.display = 'block';
+        if (typeof initializeModernListHeader === 'function') {
+          initializeModernListHeader();
+        }
+      } else if (defaultView === 'modern_row') {
+        document.getElementById('rowView').style.display = 'block';
+        if (typeof initializeModernRowHeader === 'function') {
+          initializeModernRowHeader();
+        }
+      } else {
+        document.getElementById('calendarView').style.display = 'block';
+        document.getElementById('staticHeader').style.display = 'flex';
+      }
+
+      // Update the views dropdown button text
+      var viewText = '';
+      if (defaultView === 'calendar') {
+        viewText = '<i class="fa-regular fa-calendar-days" style="padding-right: 5px; font-size:15px; opacity: .5;"></i>Month<span class="arrow">▼</span>';
+      } else if (defaultView === 'modern_list') {
+        viewText = '<i class="fa-solid fa-list" style="padding-right: 5px; font-size:15px;"></i>Modern List<span class="arrow">▼</span>';
+      } else if (defaultView === 'modern_row') {
+        viewText = '<i class="fa-solid fa-list" style="padding-right: 5px; font-size:15px;"></i>Modern Row<span class="arrow">▼</span>';
+      }
+      // Update all toggle buttons in case you have more than one
+      document.querySelectorAll('.views-toggle-button').forEach(function(button) {
+        button.innerHTML = viewText;
+      });
+    });
   </script>  
 </body>
 </html>

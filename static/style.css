@@ -73,6 +73,7 @@ h4 {
   border: 2px solid transparent;
   box-sizing: border-box;
   box-shadow: inset 0 0 0 1px #506688;
+  border-width: 1px;
 }
 .search-box:focus,
 .add-calendar-button:focus,
@@ -83,6 +84,7 @@ h4 {
   border-color: #506688 !important;
   box-shadow: none;
   outline: none !important;
+  border-width: 1px;
 }
 
 /* Buttons */
@@ -93,6 +95,7 @@ h4 {
   margin-left: 0.5rem;
   border-radius: 6px;
   color: #506688;
+  border-width: 1px;
 }
 .action-button:hover {
   border-color: #506688;
