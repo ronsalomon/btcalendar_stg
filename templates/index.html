@@ -490,34 +490,51 @@
   
 
     // On page load, determine which view should be active.
-    document.addEventListener('DOMContentLoaded', function() {
-      // Get the default view from Flask. If not provided, fallback to 'calendar'
-      var defaultView = "{{ default_view|default('calendar') }}".trim();
-      console.log("Default view from template:", defaultView);
+    document.querySelectorAll('.toggle-button').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        e.preventDefault();
+        // Update toggle button text
+        var selectedViewText = this.textContent.trim() + ' <span class="arrow">▼</span>';
+        document.querySelectorAll('.views-toggle-button').forEach(function(button) {
+          button.innerHTML = selectedViewText;
+        });
+        
+        var view = this.getAttribute('data-view');
 
-      if (defaultView === 'calendar') {
-        document.getElementById('calendarView').style.display = 'block';
-        document.getElementById('listView').style.display = 'none';
-        document.getElementById('rowView').style.display = 'none';
-        document.getElementById('staticHeader').style.display = 'flex';
-      } else if (defaultView === 'modern_list') {
-        document.getElementById('calendarView').style.display = 'none';
-        document.getElementById('listView').style.display = 'block';
-        document.getElementById('rowView').style.display = 'none';
-        document.getElementById('staticHeader').style.display = 'none';
-        if (typeof initializeModernListHeader === 'function') {
+        if (view === 'calendar') {
+          document.getElementById('calendarView').style.display = 'block';
+          document.getElementById('listView').style.display = 'none';
+          document.getElementById('rowView').style.display = 'none';
+          document.getElementById('staticHeader').style.display = 'flex';
+          var listHeader = document.querySelector('.list-view-header');
+          var rowHeader = document.querySelector('.row-view-header');
+          if (listHeader) { listHeader.style.display = 'none'; }
+          if (rowHeader) { rowHeader.style.display = 'none'; }
+        } else if (view === 'modern_list') {
+          document.getElementById('calendarView').style.display = 'none';
+          document.getElementById('listView').style.display = 'block';
+          document.getElementById('rowView').style.display = 'none';
+          document.getElementById('staticHeader').style.display = 'none';
+          var listHeader = document.querySelector('.list-view-header');
+          if (listHeader) { listHeader.style.display = 'flex'; }
           initializeModernListHeader();
-        }
-      } else if (defaultView === 'modern_row') {
-        document.getElementById('calendarView').style.display = 'none';
-        document.getElementById('listView').style.display = 'none';
-        document.getElementById('rowView').style.display = 'block';
-        document.getElementById('staticHeader').style.display = 'none';
-        if (typeof initializeModernRowHeader === 'function') {
+        } else if (view === 'modern_row') {
+          document.getElementById('calendarView').style.display = 'none';
+          document.getElementById('listView').style.display = 'none';
+          document.getElementById('rowView').style.display = 'block';
+          document.getElementById('staticHeader').style.display = 'none';
+          var rowHeader = document.querySelector('.row-view-header');
+          if (rowHeader) { rowHeader.style.display = 'flex'; }
           initializeModernRowHeader();
         }
-      }
+        
+        // Close any open dropdowns
+        document.querySelectorAll('.views-dropdown').forEach(function(dd) {
+          dd.style.display = 'none';
+        });
+      });
     });
+
 
   
     // ================================
