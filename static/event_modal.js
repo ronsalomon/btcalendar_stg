@@ -1,7 +1,6 @@
 (function() {
   // Function to open the modal and populate its content
   function openEventModal(el) {
-    console.log("openEventModal triggered", el);
     const overlay = document.getElementById('eventModalOverlay');
     if (!overlay) return;
     
@@ -14,6 +13,12 @@
     const tags = el.getAttribute('data-tags') || "";
     const image = el.getAttribute('data-image') || "";
     
+    // Create a message object with the event data
+    const message = {
+      action: 'openEventModal',
+      data: { title, date, time, location, description, tags, image }
+    }
+
     // Update modal elements (make sure these IDs match those in event_detail_fragment.html)
     const modalTitle = document.getElementById('modalEventTitle');
     const modalDescription = document.getElementById('modalEventDescription');
@@ -100,5 +105,9 @@
 
   // Expose functions globally (optional)
   window.openEventModal = openEventModal;
+
+  // Post message to the parent window
+  window.parent.postMessage(message, '*');
+  
   window.CloseEvent = closeEventModal;
 })();

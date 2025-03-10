@@ -624,7 +624,6 @@ h4 {
 .modal-content {
   position: relative;
   width: 100%;
-  max-width: 1000px;
   background: #ffffff;
   padding: 20px;
   border-radius: 6px;
