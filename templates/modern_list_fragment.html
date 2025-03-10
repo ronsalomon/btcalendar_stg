@@ -26,7 +26,7 @@
         <div class="add-calendar-dropdown" style="display: none;">
           <ul class="dropdown-list">
             <li class="dropdown-item">
-              <a href="https://calendar.google.com/calendar/r?cid=https%3A%2F%2Fbrooklyntabdev.wpengine.com%2Fcalendar.ics" class="download-option" data-type="google">Google Calendar</a>
+              <a href="https://calendar.google.com/calendar/r?cid=https%3A%2F%2Fbrooklyntabdevent.wpengine.com%2Fcalendar.ics" class="download-option" data-type="google">Google Calendar</a>
             </li>
             <li class="dropdown-item">
               <a href="webcal://btcalendar-stg.onrender.com/calendar.ics" class="download-option" data-type="apple">Apple Calendar</a>
@@ -83,40 +83,51 @@
 
   <!-- modern_list_fragment.html -->
   <div class="modern-list-events">
-    {% for ev in events %}
-      <div class="modern-list-event">
-        {% if ev.image %}
+    {% for event in events %}
+      <div class="modern-list-event clickable-event" onclick="openEventModal(this)"
+           data-title="{{ event.title }}"
+           data-date="{{ event.start_date }}"
+           data-time="{{ event.start_time }}"
+           data-description="{{ event.description }}"
+           {% if event.image %} data-image="{{ event.image }}" {% endif %}
+           {% if event.location %} data-location="{{ event.location }}" {% endif %}>
+        {% if event.image %}
           <div class="modern-list-event-image">
-            <img src="{{ ev.image }}" alt="{{ ev.title }}">
+            <img src="{{ event.image }}" alt="{{ event.title }}">
           </div>
         {% endif %}
         <div class="modern-list-event-content">
-          <div class="event-title"><h4>{{ ev.title }}</h4></div>
+          <div class="event-title"><h4>{{ event.title }}</h4></div>
           <div class="event-date-time">
             <span class="date-icon">
               <i class="fa fa-calendar" style="font-size:15px;color:#506688;"></i>
             </span>
-            <span class="event-date" data-date="{{ ev.start_date }}">
-              {{ datetime.strptime(ev.start_date, "%Y-%m-%d").strftime("%B ") }}{{ datetime.strptime(ev.start_date, "%Y-%m-%d").day }}
+            <span class="event-date" data-date="{{ event.start_date }}">
+              {% set edate = datetime.strptime(event.start_date, "%Y-%m-%d") %}
+              {{ edate.strftime("%B") }} {{ edate.day }}
             </span>
             <span class="time-icon">
               <i class="fa-solid fa-clock" style="font-size: 15px; color:#506688;"></i>
             </span>
-            <span class="event-time" data-time="{{ ev.start_time }}">
-              {{ ev.start_time }}
+            <span class="event-time" data-time="{{ event.start_time }}">
+              {% set etime = datetime.strptime(event.start_time, "%H:%M") %}
+              {{ etime.strftime("%I:%M%p").lstrip("0").lower() }}
             </span>
-          </div>          
+          </div>
           <p class="event-description">
-            {{ ev.description }}
+            {{ event.description }}
           </p>
           <div class="event-date-time">
-            <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>
+            <span class="time-icon">
+              <i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i>
+            </span>
           </div>
         </div>
       </div>
     {% endfor %}
   </div>
 </div>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Parse a "YYYY-MM-DD" string into a local Date object.
@@ -179,39 +190,39 @@
   });
 
   document.querySelectorAll('.download-option').forEach(function(link) {
-      link.addEventListener('click', function(e) {
-        var type = this.getAttribute('data-type');
-        // For options that do not require custom handling, let them proceed.
-        if (type === "apple" || type === "outlook" || type === "google" ||
-            type === "download-ics" || type === "download-xml") {
-          return;
-        }
-        if (type === "copy") {
-          e.preventDefault();
-          // Build the proper ICS URL using the current origin.
-          var importUrl = window.location.origin + "/calendar.ics";
-          navigator.clipboard.writeText(importUrl).then(function() {
-            var addCalButton = document.querySelector('.add-calendar-button');
-            var originalText = addCalButton.innerHTML;
-            addCalButton.innerHTML = "Link copied to clipboard";
-            setTimeout(function() {
-              addCalButton.innerHTML = originalText;
-            }, 2000);
-          }).catch(function(err) {
-            console.error("Failed to copy text: ", err);
-          });
-          var dropdown = this.closest('.add-calendar-dropdown');
-          if (dropdown) {
-            dropdown.style.display = 'none';
-          }
-          return;
-        }
+    link.addEventListener('click', function(e) {
+      var type = this.getAttribute('data-type');
+      // For options that do not require custom handling, let them proceed.
+      if (type === "apple" || type === "outlook" || type === "google" ||
+          type === "download-ics" || type === "download-xml") {
+        return;
+      }
+      if (type === "copy") {
         e.preventDefault();
-        alert("Selected " + type + " calendar option.");
+        // Build the proper ICS URL using the current origin.
+        var importUrl = window.location.origin + "/calendar.ics";
+        navigator.clipboard.writeText(importUrl).then(function() {
+          var addCalButton = document.querySelector('.add-calendar-button');
+          var originalText = addCalButton.innerHTML;
+          addCalButton.innerHTML = "Link copied to clipboard";
+          setTimeout(function() {
+            addCalButton.innerHTML = originalText;
+          }, 2000);
+        }).catch(function(err) {
+          console.error("Failed to copy text: ", err);
+        });
         var dropdown = this.closest('.add-calendar-dropdown');
         if (dropdown) {
           dropdown.style.display = 'none';
         }
-      });
+        return;
+      }
+      e.preventDefault();
+      alert("Selected " + type + " calendar option.");
+      var dropdown = this.closest('.add-calendar-dropdown');
+      if (dropdown) {
+        dropdown.style.display = 'none';
+      }
     });
+  });
 </script>

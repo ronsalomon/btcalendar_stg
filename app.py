@@ -51,7 +51,8 @@ def events_api():
             "end_date": data.get("end_date", ""),
             "end_time": data.get("end_time", ""),
             "description": data.get("description", ""),
-            "image": data.get("image", "")
+            "image": data.get("image", ""),
+            "location": data.get("location", "")
         }
         events = load_events()
         events.append(new_event)
@@ -67,13 +68,8 @@ def events_by_date(date_str):
     :param date_str: Date string in YYYY-MM-DD format
     """
     try:
-        # Parse the date string
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-        
-        # Get all events
         all_events = load_events()
-        
-        # Filter events for the target date
         filtered_events = []
         for event in all_events:
             try:
@@ -81,9 +77,7 @@ def events_by_date(date_str):
                 if event_date == target_date:
                     filtered_events.append(event)
             except (ValueError, KeyError):
-                # Skip events with invalid dates
                 continue
-                
         return jsonify(filtered_events)
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
@@ -99,7 +93,6 @@ def list_events(date_str):
     try:
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         all_events = load_events()
-        # First, filter events that occur exactly on the target date.
         filtered_events = []
         for event in all_events:
             try:
@@ -109,19 +102,16 @@ def list_events(date_str):
             except (ValueError, KeyError):
                 continue
 
-        # If no events on the selected day, show upcoming events (from today onward).
         if not filtered_events:
             upcoming_events = []
             for event in all_events:
                 try:
                     event_date = datetime.strptime(event["start_date"], "%Y-%m-%d").date()
-                    # Use today's date as the lower bound for upcoming events.
                     if event_date >= date.today():
                         upcoming_events.append(event)
                 except (ValueError, KeyError):
                     continue
 
-            # Define a key to sort events by date and time.
             def event_sort_key(ev):
                 try:
                     return datetime.strptime(ev["start_date"] + " " + ev["start_time"], "%Y-%m-%d %H:%M")
@@ -145,7 +135,6 @@ def row_events(date_str):
     try:
         target_date = datetime.strptime(date_str, "%Y-%m-%d").date()
         all_events = load_events()
-        # First, filter events that occur exactly on the target date.
         filtered_events_row = []
         for event in all_events:
             try:
@@ -155,19 +144,16 @@ def row_events(date_str):
             except (ValueError, KeyError):
                 continue
 
-        # If no events on the selected day, show upcoming events (from today onward).
         if not filtered_events_row:
             upcoming_events = []
             for event in all_events:
                 try:
                     event_date = datetime.strptime(event["start_date"], "%Y-%m-%d").date()
-                    # Use today's date as the lower bound for upcoming events.
                     if event_date >= date.today():
                         upcoming_events.append(event)
                 except (ValueError, KeyError):
                     continue
 
-            # Define a key to sort events by date and time.
             def event_sort_key(ev):
                 try:
                     return datetime.strptime(ev["start_date"] + " " + ev["start_time"], "%Y-%m-%d %H:%M")
@@ -196,7 +182,6 @@ def api_calendar():
 
     cal = calendar.Calendar(firstweekday=6)
     month_days = cal.monthdatescalendar(year, month)
-    
     events = load_events()
     events_by_day = {}
     for ev in events:
@@ -223,12 +208,9 @@ def index():
     today = date.today()
     year = today.year
     month = today.month
-
     cal = calendar.Calendar(firstweekday=6)
     month_days = cal.monthdatescalendar(year, month)
-
     events = load_events()
-
     events_by_day = {}
     for ev in events:
         try:
@@ -238,7 +220,6 @@ def index():
         if ev_date.year == year and ev_date.month == month:
             events_by_day.setdefault(ev_date.day, []).append(ev)
     
-    # Filter events for today's date for initial list view
     today_events = []
     for ev in events:
         try:
@@ -247,7 +228,7 @@ def index():
                 today_events.append(ev)
         except ValueError:
             continue
-    
+
     display_date = today.strftime("%a, %B %d")
     display_date_iso = today.strftime("%Y-%m-%d")
     return render_template("index.html",
@@ -259,15 +240,13 @@ def index():
                            today=today,
                            events=today_events,
                            display_date=display_date,
-                           display_date_iso=display_date_iso)
+                           display_date_iso=display_date_iso,
+                           default_view="calendar")
 
 @app.route("/calendar.ics")
 def download_ics():
-    # Get the current year
     current_year = date.today().year
-    # Load all events
     events = load_events()
-    # Filter events for the current year
     current_year_events = []
     for event in events:
         try:
@@ -276,18 +255,12 @@ def download_ics():
                 current_year_events.append(event)
         except Exception:
             continue
-
-    # Generate the ICS file content
     ics_content = generate_ics(current_year_events)
     response = app.response_class(ics_content, mimetype='text/calendar')
     response.headers["Content-Disposition"] = f"attachment; filename=calendar_{current_year}.ics"
     return response
 
-
 def generate_ics(events):
-    """
-    Generate an ICS file string from a list of event dictionaries.
-    """
     lines = []
     lines.append("BEGIN:VCALENDAR")
     lines.append("VERSION:2.0")
@@ -298,13 +271,10 @@ def generate_ics(events):
     
     for event in events:
         try:
-            # Parse the event's start date and time
             dtstart = datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M")
             dtstart_str = dtstart.strftime("%Y%m%dT%H%M%S")
         except Exception:
-            continue  # skip events with invalid date/time
-        
-        # Determine end date/time if provided; otherwise, default to 1 hour after start
+            continue
         if event.get("end_date") and event.get("end_time"):
             try:
                 dtend = datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M")
@@ -313,11 +283,8 @@ def generate_ics(events):
         else:
             dtend = dtstart + timedelta(hours=1)
         dtend_str = dtend.strftime("%Y%m%dT%H%M%S")
-        
-        # Create a unique ID for the event
         uid = str(uuid.uuid4())
         summary = event.get("title", "No Title")
-        # Escape newlines in the description
         description = event.get("description", "").replace("\n", "\\n")
         
         lines.append("BEGIN:VEVENT")
@@ -333,14 +300,10 @@ def generate_ics(events):
     lines.append("END:VCALENDAR")
     return "\r\n".join(lines)
 
-
 @app.route("/calendar.xml")
 def download_xml():
-    # Get the current year
     current_year = date.today().year
-    # Load all events
     events = load_events()
-    # Filter events for the current year
     current_year_events = []
     for event in events:
         try:
@@ -350,17 +313,12 @@ def download_xml():
         except Exception:
             continue
 
-    # Generate the XML file content
     xml_content = generate_xml(current_year_events)
     response = app.response_class(xml_content, mimetype='application/xml')
     response.headers["Content-Disposition"] = f"attachment; filename=calendar_{current_year}.xml"
     return response
 
-
 def generate_xml(events):
-    """
-    Generate an XML file string from a list of event dictionaries.
-    """
     lines = []
     lines.append('<?xml version="1.0" encoding="UTF-8"?>')
     lines.append("<calendar>")
@@ -368,13 +326,10 @@ def generate_xml(events):
     
     for event in events:
         try:
-            # Parse the event's start date and time
             dtstart = datetime.strptime(f"{event['start_date']} {event['start_time']}", "%Y-%m-%d %H:%M")
             dtstart_str = dtstart.strftime("%Y-%m-%dT%H:%M:%S")
         except Exception:
-            continue  # skip events with invalid date/time
-        
-        # Determine end date/time if provided; otherwise, default to 1 hour after start
+            continue
         if event.get("end_date") and event.get("end_time"):
             try:
                 dtend = datetime.strptime(f"{event['end_date']} {event['end_time']}", "%Y-%m-%d %H:%M")
@@ -383,8 +338,6 @@ def generate_xml(events):
         else:
             dtend = dtstart + timedelta(hours=1)
         dtend_str = dtend.strftime("%Y-%m-%dT%H:%M:%S")
-        
-        # Create a unique ID for the event
         uid = str(uuid.uuid4())
         summary = escape(event.get("title", "No Title"))
         description = escape(event.get("description", ""))
@@ -401,7 +354,6 @@ def generate_xml(events):
     
     lines.append("</calendar>")
     return "\n".join(lines)
-
 
 @app.route('/<view>')
 def spa(view):
@@ -445,9 +397,6 @@ def spa(view):
                            display_date=display_date,
                            display_date_iso=display_date_iso,
                            default_view=view)
-
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)

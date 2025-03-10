@@ -1,44 +1,47 @@
-<!-- Just the events row without the header -->
+<!-- row_events_fragment.html -->
 <div class="modern-row-events">
-    {% for er in events %}
-      <div class="modern-row-event">
-        <div class="modern-row-weekday">
-          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").strftime("%a")|upper }}</span>
-          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").day }}</span>                  
-        </div>
-        <div class="modern-row-event-content">
-          <div class="event-title"><h4>{{ er.title }}</h4></div>
-          <div class="event-date-time">
-            <span class="date-icon">
-              <i class="fa fa-calendar" style="font-size:15px;color:#506688;"></i>
-            </span>
-            <span class="event-date" data-date="{{ er.start_date }}">
-              {# Parse the stored date (assumed in YYYY-MM-DD format) and format it as "Month Day" #}
-              {% set edate = datetime.strptime(er.start_date, "%Y-%m-%d") %}
-              {{ edate.strftime("%B") }} {{ edate.day }}
-            </span>
-            <span class="time-icon">
-              <i class="fa-solid fa-clock" style="font-size: 15px; color:#506688;"></i>
-            </span>
-            <span class="event-time" data-time="{{ er.start_time }}">
-              {# Parse the stored time (assumed in 24-hour HH:MM format) and format it as 12-hour with am/pm #}
-              {% set etime = datetime.strptime(er.start_time, "%H:%M") %}
-              {{ etime.strftime("%I:%M%p").lstrip("0").lower() }}
-            </span>
-          </div>
-          
-          <p class="event-description">
-            {{ er.description }}
-          </p>
-          <div class="event-date-time">
-            <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>
-          </div>
-        </div>
-        {% if er.image %}
-        <div class="modern-row-event-image">
-          <img src="{{ er.image }}" alt="{{ er.title }}">
-        </div>
-        {% endif %}
+  {% for er in events %}
+    <div class="modern-row-event clickable-event"
+         data-title="{{ er.title }}"
+         data-date="{{ er.start_date }}"
+         data-time="{{ er.start_time }}"
+         data-description="{{ er.description }}"
+         {% if er.image %} data-image="{{ er.image }}" {% endif %}
+         {% if er.location %} data-location="{{ er.location }}" {% endif %}>
+      <div class="modern-row-weekday">
+        <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").strftime("%a")|upper }}</span>
+        <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").day }}</span>                  
       </div>
-    {% endfor %}
-  </div>
+      <div class="modern-row-event-content">
+        <div class="event-title"><h4>{{ er.title }}</h4></div>
+        <div class="event-date-time">
+          <span class="date-icon">
+            <i class="fa fa-calendar" style="font-size:15px;color:#506688;"></i>
+          </span>
+          <span class="event-date" data-date="{{ er.start_date }}">
+            {% set edate = datetime.strptime(er.start_date, "%Y-%m-%d") %}
+            {{ edate.strftime("%B") }} {{ edate.day }}
+          </span>
+          <span class="time-icon">
+            <i class="fa-solid fa-clock" style="font-size: 15px; color:#506688;"></i>
+          </span>
+          <span class="event-time" data-time="{{ er.start_time }}">
+            {% set etime = datetime.strptime(er.start_time, "%H:%M") %}
+            {{ etime.strftime("%I:%M%p").lstrip("0").lower() }}
+          </span>
+        </div>
+        <p class="event-description">
+          {{ er.description }}
+        </p>
+        <div class="event-date-time">
+          <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>
+        </div>
+      </div>
+      {% if er.image %}
+      <div class="modern-row-event-image">
+        <img src="{{ er.image }}" alt="{{ er.title }}">
+      </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>

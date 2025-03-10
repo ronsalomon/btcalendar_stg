@@ -1,55 +1,61 @@
 [
   {
     "title": "Valentine's Dinner Event with a long title",
-    "start_date": "2025-03-07",
+    "start_date": "2025-03-12",
     "start_time": "19:00",
-    "end_date": "2025-03-06",
+    "end_date": "2025-03-12",
     "end_time": "21:00",
+    "location": "Sanctuary",
     "description": "Join Pastor Cymbala for his online devotional, beginning at 5am every weekday! Each devotional remains on our website and on YouTube for those who wish to review or tune in later in the day.",
     "image": "https://timelyapp-prod.s3.us-west-2.amazonaws.com/images/54709980/2025_Q1_TuesdaysYT_AlU2.jpeg"
   },
   {
     "title": "Breakfast Luncheon with Tri-state Pastors",
-    "start_date": "2025-03-07",
+    "start_date": "2025-03-12",
     "start_time": "21:00",
-    "end_date": "2025-03-07",
+    "end_date": "2025-03-12",
     "end_time": "22:00",
+    "location": "190 Livingston",
     "description": "Join Pastor Cymbala for his online devotional, beginning at 5am every weekday! Each devotional remains on our website and on YouTube for those who wish to review or tune in later in the day.",
     "image": "https://timelyapp-prod.s3.us-west-2.amazonaws.com/images/54709980/2025_Q1_TuesdaysYT_AlU2.jpeg"
   },
   {
     "title": "Morning Devotion",
-    "start_date": "2025-03-08",
+    "start_date": "2025-03-12",
     "start_time": "09:00",
-    "end_date": "2025-03-08",
+    "end_date": "2025-03-12",
     "end_time": "10:30",
+    "location": "Sanctuary & Online",
     "description": "Join Pastor Cymbala for his online devotional, beginning at 5am every weekday! Each devotional remains on our website and on YouTube for those who wish to review or tune in later in the day.",
     "image": "https://timelyapp-prod.s3.us-west-2.amazonaws.com/images/54709980/2025_Q1_Sundays_lYxP.jpg"
   },
   {
     "title": "Valentine's Dinner Event with a long title",
-    "start_date": "2025-03-07",
+    "start_date": "2025-03-11",
     "start_time": "18:00",
-    "end_date": "2025-03-07",
+    "end_date": "2025-03-11",
     "end_time": "20:00",
+    "location": "163 Livinston St.",
     "description": "Join Pastor Cymbala for his online devotional, beginning at 5am every weekday! Each devotional remains on our website and on YouTube for those who wish to review or tune in later in the day.",
     "image": "https://timelyapp-prod.s3.us-west-2.amazonaws.com/images/54709980/2025_Q1_TuesdaysYT_AlU2.jpeg"
   },
   {
     "title": "Breakfast Luncheon with Tri-state Pastors",
-    "start_date": "2025-03-07",
+    "start_date": "2025-03-10",
     "start_time": "22:00",
-    "end_date": "2025-03-07",
+    "end_date": "2025-03-10",
     "end_time": "23:00",
+    "location": "17 Smith St.",
     "description": "Join Pastor Cymbala for his online devotional, beginning at 5am every weekday! Each devotional remains on our website and on YouTube for those who wish to review or tune in later in the day.",
     "image": "https://timelyapp-prod.s3.us-west-2.amazonaws.com/images/54709980/2025_Q1_TuesdaysYT_AlU2.jpeg"
   },
   {
     "title": "Morning Devotion",
-    "start_date": "2025-03-08",
+    "start_date": "2025-03-10",
     "start_time": "10:00",
-    "end_date": "2025-03-08",
+    "end_date": "2025-03-10",
     "end_time": "11:30",
+    "location": "Fulton Street",
     "description": "Join Pastor Cymbala for his online devotional, beginning at 5am every weekday! Each devotional remains on our website and on YouTube for those who wish to review or tune in later in the day.",
     "image": "https://timelyapp-prod.s3.us-west-2.amazonaws.com/images/54709980/2025_Q1_Sundays_lYxP.jpg"
   }

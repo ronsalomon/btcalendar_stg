@@ -141,6 +141,9 @@
       <div id="rowView" style="display: none;">
         {% include "modern_row_fragment.html" %}
       </div>
+
+      <!-- Include the event details popup fragment -->
+        {% include "event_detail_fragment.html" %}
     </div>
   </div>
   
@@ -593,6 +596,7 @@
         button.innerHTML = viewText;
       });
     });
-  </script>  
+  </script>
+  <script src="{{ url_for('static', filename='event_modal.js') }}"></script>
 </body>
 </html>

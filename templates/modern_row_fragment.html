@@ -29,13 +29,13 @@
               <a href="https://calendar.google.com/calendar/r?cid=https%3A%2F%2Fbrooklyntabdev.wpengine.com%2Fcalendar.ics" class="download-option" data-type="google">Google Calendar</a>
             </li>
             <li class="dropdown-item">
-              <a href="webcal://btcalendar-stg.onrender.com/calendar.ics" class="download-option" data-type="apple">Apple Calendar</a>
+              <a href="webcal://btcalendar-stg.onrendevent.com/calendar.ics" class="download-option" data-type="apple">Apple Calendar</a>
             </li>
             <li class="dropdown-item">
-              <a href="webcal://btcalendar-stg.onrender.com/calendar.ics" class="download-option" data-type="outlook">Outlook</a>
+              <a href="webcal://btcalendar-stg.onrendevent.com/calendar.ics" class="download-option" data-type="outlook">Outlook</a>
             </li>
             <li class="dropdown-item">
-              <a href="https://btcalendar-stg.onrender.com/calendar.ics" class="download-option" data-type="copy">Copy Import URL</a>
+              <a href="https://btcalendar-stg.onrendevent.com/calendar.ics" class="download-option" data-type="copy">Copy Import URL</a>
             </li>
             <li class="dropdown-item">
               <a href="{{ url_for('download_ics') }}" class="download-option" data-type="download-ics" download>Download ICS</a>
@@ -83,43 +83,54 @@
 
   <!-- modern_row_fragment.html -->
   <div class="modern-row-events">
-    {% for er in events %}
-      <div class="modern-row-event">
+    {% for event in events %}
+      <div class="modern-row-event clickable-event" onclick="openEventModal(this)"
+           data-title="{{ event.title }}"
+           data-date="{{ event.start_date }}"
+           data-time="{{ event.start_time }}"
+           data-description="{{ event.description }}"
+           {% if event.image %} data-image="{{ event.image }}" {% endif %}
+           {% if event.location %} data-location="{{ event.location }}" {% endif %}>
         <div class="modern-row-weekday">
-          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").strftime("%a")|upper }}</span>
-          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").day }}</span>                 
+          <span>{{ datetime.strptime(event.start_date, "%Y-%m-%d").strftime("%a")|upper }}</span>
+          <span>{{ datetime.strptime(event.start_date, "%Y-%m-%d").day }}</span>
         </div>
         <div class="modern-row-event-content">
-          <div class="event-title"><h4>{{ er.title }}</h4></div>
+          <div class="event-title"><h4>{{ event.title }}</h4></div>
           <div class="event-date-time">
             <span class="date-icon">
               <i class="fa fa-calendar" style="font-size:15px;color:#506688;"></i>
             </span>
-            <span class="event-date" data-date="{{ er.start_date }}">
-              {{ datetime.strptime(er.start_date, "%Y-%m-%d").strftime("%B ") }}{{ datetime.strptime(er.start_date, "%Y-%m-%d").day }}
+            <span class="event-date" data-date="{{ event.start_date }}">
+              {% set edate = datetime.strptime(event.start_date, "%Y-%m-%d") %}
+              {{ edate.strftime("%B") }} {{ edate.day }}
             </span>
             <span class="time-icon">
               <i class="fa-solid fa-clock" style="font-size: 15px; color:#506688;"></i>
             </span>
-            <span class="event-time" data-time="{{ er.start_time }}">
-              {{ er.start_time }}
+            <span class="event-time" data-time="{{ event.start_time }}">
+              {% set etime = datetime.strptime(event.start_time, "%H:%M") %}
+              {{ etime.strftime("%I:%M%p").lstrip("0").lower() }}
             </span>
-          </div>          
+          </div>
           <p class="event-description">
-            {{ er.description }}
+            {{ event.description }}
           </p>
           <div class="event-date-time">
-            <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>
+            <span class="time-icon">
+              <i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i>
+            </span>
           </div>
         </div>
-        {% if er.image %}
-        <div class="modern-row-event-image">
-          <img src="{{ er.image }}" alt="{{ er.title }}">
-        </div>
+        {% if event.image %}
+          <div class="modern-row-event-image">
+            <img src="{{ event.image }}" alt="{{ event.title }}">
+          </div>
         {% endif %}
       </div>
     {% endfor %}
   </div>
+  
 </div>
 
 <script>

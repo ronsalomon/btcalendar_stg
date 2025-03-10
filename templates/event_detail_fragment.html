@@ -1,0 +1,46 @@
+<!-- event_detail_fragment.html -->
+
+<div class="modal-overlay" id="eventModalOverlay">
+  <div class="modal-content" id="eventModalContent">
+    <button class="close-btn" id="closeEventModalBtn">&times;</button>
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <!-- Event image; hidden by default -->
+        <img src="" alt="Event Image" class="event-image" id="modalEventImage" style="display:none;" />
+      </div>
+      <div class="modal-header-right">
+        <div class="date-block">
+          <div class="month" id="modalEventMonth">MAR</div>
+          <div class="day" id="modalEventDay">1</div>
+        </div>
+        <h2 class="event-title" id="modalEventTitle">Event Title</h2>
+      </div>
+    </div>
+       
+    <div class="event-info">
+      <button class="action-button-modal">
+        <span class="calendar-icon">
+          <span class="date-icon">
+            <i class="fa-regular fa-calendar-days" style="font-size:15px;color:#506688; opacity: .5;"></i>
+          </span>
+        </span> 
+        Add To Calendar <span class="arrow"><i class="fa-solid fa-caret-down" style="font-size:15px;"></i></span>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-body-left">
+        <div class="modal-description" id="modalEventDescription">Event description goes here.</div>
+        <div class="modal-register-button"><a href="#" class="register-button">Register</a></div>    
+      </div> 
+      <div class="modal-body-right">
+        Date<span class="mobal-event-date" id="modalEventDate"></span>
+        Time<span class="mobal-event-time" id="modalEventTime"></span>
+        Location<span class="mobal-event-location" id="modalEventLocation"></span>
+      </div>
+    </div>
+    <div class="tags" id="modalEventTags">
+      <span>Tag1</span>
+      <span>Tag2</span>
+    </div>
+  </div>
+</div>

@@ -15,11 +15,9 @@
       <tr>
         {% for day_date in week %}
           <td class="{% if day_date.month != month %}other-month{% endif %}">
-            {% if day_date == today %}
-              <div class="day-number today">{{ day_date.day }}</div>
-            {% else %}
-              <div class="day-number">{{ day_date.day }}</div>
-            {% endif %}
+            <div class="day-number {% if day_date == today %}today{% endif %}">
+              {{ day_date.day }}
+            </div>
             {% if day_date.month == month and day_date.day in events_monthly %}
               {% for event in events_monthly[day_date.day] %}
                 {% if event.start_date|trim and event.start_time|trim %}
@@ -29,7 +27,13 @@
                   {% set event_dt = datetime.strptime("2025-02-14 19:00", "%Y-%m-%d %H:%M") %}
                   {% set time_str = "7:00pm" %}
                 {% endif %}
-                <div class="event-container">
+                <div class="event-container clickable-event" onclick="openEventModal(this)"
+                     data-title="{{ event.title }}"
+                     data-date="{{ event.start_date }}"
+                     data-time="{{ time_str }}"
+                     data-description="{{ event.description }}"
+                     {% if event.image %} data-image="{{ event.image }}" {% endif %}
+                     {% if event.location %} data-location="{{ event.location }}" {% endif %}>
                   <div class="event-item">
                     <strong>{{ time_str }}</strong> {{ event.title }}
                   </div>
