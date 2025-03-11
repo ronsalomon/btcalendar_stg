@@ -1,33 +1,132 @@
 import os
-import json
 import calendar
 import uuid
+import psycopg2
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from xml.sax.saxutils import escape
 
+# Additional imports for Asana integration and scheduling
+from apscheduler.schedulers.background import BackgroundScheduler
+import asyncio
+import httpx
+import pytz
+from dotenv import load_dotenv
+
+# Load environment variables from .env (if available)
+load_dotenv()
+
 app = Flask(__name__)
 app.jinja_env.globals.update(datetime=datetime)
 
-EVENTS_FILE = "events.json"
+# Use the provided Render PostgreSQL URL, or override via DATABASE_URL environment variable.
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://btwpcaldb_user:5tBjRRmg6AlRyxxyCvCpI6mmbZMqQEd7@dpg-cv7qsaij1k6c739h9mmg-a.virginia-postgres.render.com/btwpcaldb"
+)
+
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL)
+
+def init_db():
+    """Initialize the database by creating the events table if it doesn't exist."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            id SERIAL PRIMARY KEY,
+            asana_task_gid TEXT,
+            event_status TEXT,
+            ministry TEXT,
+            website_trigger TEXT,
+            registration TEXT,
+            title TEXT NOT NULL,
+            start_date DATE NOT NULL,
+            start_time TIME NOT NULL,
+            end_date DATE,
+            end_time TIME,
+            location TEXT,
+            description TEXT,
+            image TEXT
+        )
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
 
 def load_events():
-    """Load events from the JSON file. Returns a list of event dictionaries."""
-    if os.path.exists(EVENTS_FILE):
-        with open(EVENTS_FILE, "r") as f:
-            try:
-                events = json.load(f)
-            except json.JSONDecodeError:
-                events = []
-        return events
-    else:
-        return []
+    """Load all events from the database and return them as a list of dictionaries."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT asana_task_gid, event_status, ministry, website_trigger, registration, title,
+               start_date, start_time, end_date, end_time, location, description, image
+        FROM events
+    """)
+    rows = cur.fetchall()
+    events = []
+    for row in rows:
+        events.append({
+            "asana_task_gid": row[0],
+            "event_status": row[1],
+            "ministry": row[2],
+            "website_trigger": row[3],
+            "registration": row[4],
+            "title": row[5],
+            "start_date": row[6].strftime("%Y-%m-%d") if row[6] else "",
+            "start_time": row[7].strftime("%H:%M") if row[7] else "",
+            "end_date": row[8].strftime("%Y-%m-%d") if row[8] else "",
+            "end_time": row[9].strftime("%H:%M") if row[9] else "",
+            "location": row[10],
+            "description": row[11],
+            "image": row[12]
+        })
+    cur.close()
+    conn.close()
+    return events
 
-def save_events(events):
-    """Save a list of event dictionaries to the JSON file."""
-    with open(EVENTS_FILE, "w") as f:
-        json.dump(events, f, indent=2)
+def add_event(event):
+    """Insert a new event into the database and return the inserted event with its new id."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+         INSERT INTO events (
+             asana_task_gid, event_status, ministry, website_trigger, registration, title,
+             start_date, start_time, end_date, end_time, location, description, image
+         )
+         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+         RETURNING id
+    """, (
+         event.get("asana_task_gid"),
+         event.get("event_status"),
+         event.get("ministry"),
+         event.get("website_trigger"),
+         event.get("registration"),
+         event.get("title"),
+         event.get("start_date"),
+         event.get("start_time"),
+         event.get("end_date"),
+         event.get("end_time"),
+         event.get("location"),
+         event.get("description"),
+         event.get("image")
+    ))
+    new_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    event["id"] = new_id
+    return event
 
+def event_exists(asana_task_gid):
+    """Check if an event with the given Asana task gid already exists in the DB."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM events WHERE asana_task_gid = %s", (asana_task_gid,))
+    count = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+    return count > 0
 
 @app.route("/api/events", methods=["GET", "POST"])
 def events_api():
@@ -45,26 +144,27 @@ def events_api():
             if field not in data:
                 return jsonify({"error": f"Missing field '{field}'"}), 400
         new_event = {
+            "asana_task_gid": data.get("asana_task_gid"),
+            "event_status": data.get("event_status"),
+            "ministry": data.get("ministry"),
+            "website_trigger": data.get("website_trigger"),
+            "registration": data.get("registration"),
             "title": data["title"],
             "start_date": data["start_date"],
             "start_time": data["start_time"],
-            "end_date": data.get("end_date", ""),
-            "end_time": data.get("end_time", ""),
+            "end_date": data.get("end_date", None),
+            "end_time": data.get("end_time", None),
             "description": data.get("description", ""),
             "image": data.get("image", ""),
             "location": data.get("location", "")
         }
-        events = load_events()
-        events.append(new_event)
-        save_events(events)
-        return jsonify({"status": "success", "event": new_event}), 201
-
+        added_event = add_event(new_event)
+        return jsonify({"status": "success", "event": added_event}), 201
 
 @app.route("/api/events/date/<date_str>")
 def events_by_date(date_str):
     """
     Return events for a specific date in JSON.
-    
     :param date_str: Date string in YYYY-MM-DD format
     """
     try:
@@ -81,7 +181,6 @@ def events_by_date(date_str):
         return jsonify(filtered_events)
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
-
 
 @app.route("/api/list_events/<date_str>")
 def list_events(date_str):
@@ -123,7 +222,6 @@ def list_events(date_str):
         return render_template("list_events_fragment.html", events=filtered_events)
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
-
 
 @app.route("/api/row_events/<date_str>")
 def row_events(date_str):
@@ -398,5 +496,94 @@ def spa(view):
                            display_date_iso=display_date_iso,
                            default_view=view)
 
+# ====== Asana Integration ======
+
+async def fetch_tasks_from_asana():
+    """
+    Fetch tasks from Asana API asynchronously.
+    """
+    bearer_token = os.getenv('ASANA_TOKEN')
+    project_gid = os.getenv('ASANA_DEMO_PROJECT_ID')
+    if not bearer_token or not project_gid:
+        print("ASANA_TOKEN or ASANA_DEMO_PROJECT_ID not set.")
+        return []
+    asana_url = f"https://app.asana.com/api/1.0/projects/{project_gid}/tasks"
+    headers = {
+        "accept": "application/json",
+        "authorization": f"Bearer {bearer_token}"
+    }
+    params = {
+        "opt_fields": "name,projects.gid,projects.name,custom_fields.gid,custom_fields.name,custom_fields.display_value,due_on"
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.get(asana_url, headers=headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("data", [])
+
+@app.route("/trigger-asana")
+def trigger_asana():
+    process_asana_tasks()
+    return "Asana tasks processed."
+
+
+def process_asana_tasks():
+    """
+    Fetch tasks from Asana and create corresponding events in the DB if they don't already exist.
+    """
+    try:
+        tasks = asyncio.run(fetch_tasks_from_asana())
+        print(f"[DEBUG] Fetched {len(tasks)} tasks from Asana")
+        for task in tasks:
+            asana_task_gid = task.get("gid")
+            if not asana_task_gid:
+                continue
+            if event_exists(asana_task_gid):
+                print(f"[DEBUG] Skipping duplicate task: {asana_task_gid}")
+                continue  # Skip tasks that have already been imported.
+            title = task.get("name", "Unnamed Task")
+            # Use due_on if available; otherwise default to today's date.
+            due_on = task.get("due_on")
+            start_date = due_on if due_on else datetime.now().strftime("%Y-%m-%d")
+            # Default start and end times.
+            start_time = "09:00"
+            end_time = "10:00"
+            # Concatenate any custom field display values for additional details.
+            custom_details = ", ".join(
+                [f"{cf.get('name')}: {cf.get('display_value')}" for cf in task.get("custom_fields", []) if cf.get("display_value")]
+            )
+            new_event = {
+                "asana_task_gid": asana_task_gid,
+                "event_status": "Approved",
+                "ministry": "Asana Import",
+                "website_trigger": "Publish",
+                "registration": "",
+                "title": title,
+                "start_date": start_date,
+                "start_time": start_time,
+                "end_date": start_date,
+                "end_time": end_time,
+                "location": "",
+                "description": "Imported from Asana. " + custom_details,
+                "image": ""
+            }
+            add_event(new_event)
+            print(f"[DEBUG] Inserted event for task: {title}")
+    except Exception as e:
+        print("Error processing Asana tasks:", e)
+
+
+def start_asana_scheduler():
+    """
+    Start a background scheduler to run the Asana task processing every 60 seconds.
+    """
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(process_asana_tasks, 'interval', seconds=60)
+    scheduler.start()
+
+# ===================================
+
 if __name__ == "__main__":
+    init_db()  # Ensure the events table exists on startup.
+    start_asana_scheduler()  # Start background job to fetch and import Asana tasks.
     app.run(debug=True)
