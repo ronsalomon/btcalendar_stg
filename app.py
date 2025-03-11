@@ -524,7 +524,7 @@ async def fetch_tasks_from_asana():
 @app.route("/trigger-asana")
 def trigger_asana():
     process_asana_tasks()
-    return "Asana tasks processed."
+    return "Asana tasks processed"
 
 
 def process_asana_tasks():
