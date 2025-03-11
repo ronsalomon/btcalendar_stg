@@ -521,26 +521,69 @@ async def fetch_tasks_from_asana():
         data = response.json()
         return data.get("data", [])
 
-@app.route("/trigger-asana")
-def trigger_asana():
-    process_asana_tasks()
-    return "Asana tasks processed"
 
+def update_event(event):
+    """Update an existing event in the database based on the Asana task gid."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+         UPDATE events
+         SET event_status = %s,
+             ministry = %s,
+             website_trigger = %s,
+             registration = %s,
+             title = %s,
+             start_date = %s,
+             start_time = %s,
+             end_date = %s,
+             end_time = %s,
+             location = %s,
+             description = %s,
+             image = %s
+         WHERE asana_task_gid = %s
+         RETURNING id
+    """, (
+         event.get("event_status"),
+         event.get("ministry"),
+         event.get("website_trigger"),
+         event.get("registration"),
+         event.get("title"),
+         event.get("start_date"),
+         event.get("start_time"),
+         event.get("end_date"),
+         event.get("end_time"),
+         event.get("location"),
+         event.get("description"),
+         event.get("image"),
+         event.get("asana_task_gid")
+    ))
+    updated_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    event["id"] = updated_id
+    return event
 
 def process_asana_tasks():
     """
-    Fetch tasks from Asana and create corresponding events in the DB if they don't already exist.
+    Fetch tasks from Asana and update corresponding events in the DB if they already exist,
+    or create new ones if they don't.
     """
     try:
         tasks = asyncio.run(fetch_tasks_from_asana())
         print(f"[DEBUG] Fetched {len(tasks)} tasks from Asana")
+        
+        # Helper function to get a custom field's display value by name.
+        def get_cf(task, field_name):
+            for cf in task.get("custom_fields", []):
+                if cf.get("name") == field_name:
+                    return cf.get("display_value", "")
+            return ""
+        
         for task in tasks:
             asana_task_gid = task.get("gid")
             if not asana_task_gid:
                 continue
-            if event_exists(asana_task_gid):
-                print(f"[DEBUG] Skipping duplicate task: {asana_task_gid}")
-                continue  # Skip tasks that have already been imported.
             title = task.get("name", "Unnamed Task")
             # Use due_on if available; otherwise default to today's date.
             due_on = task.get("due_on")
@@ -548,27 +591,39 @@ def process_asana_tasks():
             # Default start and end times.
             start_time = "09:00"
             end_time = "10:00"
-            # Concatenate any custom field display values for additional details.
-            custom_details = ", ".join(
-                [f"{cf.get('name')}: {cf.get('display_value')}" for cf in task.get("custom_fields", []) if cf.get("display_value")]
-            )
+            
+            # Map custom fields to event properties.
+            event_status    = get_cf(task, "Event Status") or "Approved"
+            ministry        = get_cf(task, "Ministry") or "Asana Import"
+            website_trigger = get_cf(task, "Website Trigger") or "Publish"
+            registration    = get_cf(task, "Registration") or ""
+            description     = get_cf(task, "Content") or title
+            image           = get_cf(task, "Graphics") or ""
+            location        = get_cf(task, "Locations") or ""
+            
             new_event = {
                 "asana_task_gid": asana_task_gid,
-                "event_status": "Approved",
-                "ministry": "Asana Import",
-                "website_trigger": "Publish",
-                "registration": "",
+                "event_status": event_status,
+                "ministry": ministry,
+                "website_trigger": website_trigger,
+                "registration": registration,
                 "title": title,
                 "start_date": start_date,
                 "start_time": start_time,
                 "end_date": start_date,
                 "end_time": end_time,
-                "location": "",
-                "description": "Imported from Asana. " + custom_details,
-                "image": ""
+                "location": location,
+                "description": description,
+                "image": image
             }
-            add_event(new_event)
-            print(f"[DEBUG] Inserted event for task: {title}")
+            
+            if event_exists(asana_task_gid):
+                update_event(new_event)
+                print(f"[DEBUG] Updated event for task: {title}")
+            else:
+                add_event(new_event)
+                print(f"[DEBUG] Inserted event for task: {title}")
+                
     except Exception as e:
         print("Error processing Asana tasks:", e)
 
@@ -580,6 +635,13 @@ def start_asana_scheduler():
     scheduler = BackgroundScheduler()
     scheduler.add_job(process_asana_tasks, 'interval', seconds=60)
     scheduler.start()
+
+
+@app.route("/trigger-asana")
+def trigger_asana():
+    process_asana_tasks()
+    return "Asana tasks processed"
+
 
 # ===================================
 
