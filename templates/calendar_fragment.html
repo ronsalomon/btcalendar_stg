@@ -32,6 +32,7 @@
                      data-date="{{ event.start_date }}"
                      data-time="{{ time_str }}"
                      data-description="{{ event.description }}"
+                     data-organizer="{{ event.organizer }}"
                      {% if event.image %} data-image="{{ event.image }}" {% endif %}
                      {% if event.location %} data-location="{{ event.location }}" {% endif %}>
                   <div class="event-item">

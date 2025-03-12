@@ -6,6 +6,7 @@
          data-date="{{ ev.start_date }}"
          data-time="{{ ev.start_time }}"
          data-description="{{ ev.description }}"
+         data-organizer="{{ event.organizer }}"
          {% if ev.image %} data-image="{{ ev.image }}" {% endif %}
          {% if ev.location %} data-location="{{ ev.location }}" {% endif %}>
       {% if ev.image %}

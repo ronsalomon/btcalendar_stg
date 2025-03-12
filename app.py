@@ -28,6 +28,7 @@ DATABASE_URL = os.getenv(
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
 
+
 def init_db():
     """Initialize the database by creating the events table if it doesn't exist."""
     conn = get_db_connection()
@@ -38,6 +39,7 @@ def init_db():
             asana_task_gid TEXT,
             event_status TEXT,
             ministry TEXT,
+            organizer TEXT,
             website_trigger TEXT,
             registration TEXT,
             title TEXT NOT NULL,
@@ -54,12 +56,13 @@ def init_db():
     cur.close()
     conn.close()
 
+
 def load_events():
     """Load all events from the database and return them as a list of dictionaries."""
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
-        SELECT asana_task_gid, event_status, ministry, website_trigger, registration, title,
+        SELECT asana_task_gid, event_status, ministry, organizer, website_trigger, registration, title,
                start_date, start_time, end_date, end_time, location, description, image
         FROM events
     """)
@@ -70,20 +73,22 @@ def load_events():
             "asana_task_gid": row[0],
             "event_status": row[1],
             "ministry": row[2],
-            "website_trigger": row[3],
-            "registration": row[4],
-            "title": row[5],
-            "start_date": row[6].strftime("%Y-%m-%d") if row[6] else "",
-            "start_time": row[7].strftime("%H:%M") if row[7] else "",
-            "end_date": row[8].strftime("%Y-%m-%d") if row[8] else "",
-            "end_time": row[9].strftime("%H:%M") if row[9] else "",
-            "location": row[10],
-            "description": row[11],
-            "image": row[12]
+            "organizer": row[3],
+            "website_trigger": row[4],
+            "registration": row[5],
+            "title": row[6],
+            "start_date": row[7].strftime("%Y-%m-%d") if row[7] else "",
+            "start_time": row[8].strftime("%H:%M") if row[8] else "",
+            "end_date": row[9].strftime("%Y-%m-%d") if row[9] else "",
+            "end_time": row[10].strftime("%H:%M") if row[10] else "",
+            "location": row[11],
+            "description": row[12],
+            "image": row[13]
         })
     cur.close()
     conn.close()
     return events
+
 
 def add_event(event):
     """Insert a new event into the database and return the inserted event with its new id."""
@@ -91,15 +96,16 @@ def add_event(event):
     cur = conn.cursor()
     cur.execute("""
          INSERT INTO events (
-             asana_task_gid, event_status, ministry, website_trigger, registration, title,
+             asana_task_gid, event_status, ministry, organizer, website_trigger, registration, title,
              start_date, start_time, end_date, end_time, location, description, image
          )
-         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
          RETURNING id
     """, (
          event.get("asana_task_gid"),
          event.get("event_status"),
          event.get("ministry"),
+         event.get("organizer"),
          event.get("website_trigger"),
          event.get("registration"),
          event.get("title"),
@@ -117,6 +123,7 @@ def add_event(event):
     conn.close()
     event["id"] = new_id
     return event
+
 
 def event_exists(asana_task_gid):
     """Check if an event with the given Asana task gid already exists in the DB."""
@@ -181,6 +188,7 @@ def events_by_date(date_str):
         return jsonify(filtered_events)
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+
 
 @app.route("/api/list_events/<date_str>")
 def list_events(date_str):
@@ -530,6 +538,7 @@ def update_event(event):
          UPDATE events
          SET event_status = %s,
              ministry = %s,
+             organizer = %s,
              website_trigger = %s,
              registration = %s,
              title = %s,
@@ -545,6 +554,7 @@ def update_event(event):
     """, (
          event.get("event_status"),
          event.get("ministry"),
+         event.get("organizer"),
          event.get("website_trigger"),
          event.get("registration"),
          event.get("title"),
@@ -584,27 +594,30 @@ def process_asana_tasks():
             asana_task_gid = task.get("gid")
             if not asana_task_gid:
                 continue
+            
             title = task.get("name", "Unnamed Task")
-            # Use due_on if available; otherwise default to today's date.
             due_on = task.get("due_on")
             start_date = due_on if due_on else datetime.now().strftime("%Y-%m-%d")
-            # Default start and end times.
             start_time = "09:00"
             end_time = "10:00"
             
-            # Map custom fields to event properties.
-            event_status    = get_cf(task, "Event Status") or "Approved"
-            ministry        = get_cf(task, "Ministry") or "Asana Import"
-            website_trigger = get_cf(task, "Website Trigger") or "Publish"
-            registration    = get_cf(task, "Registration") or ""
-            description     = get_cf(task, "Content") or title
-            image           = get_cf(task, "Graphics") or ""
-            location        = get_cf(task, "Locations") or ""
+            # Map custom fields:
+            event_status   = get_cf(task, "Event Status") or "Approved"
+            # Here we map the 'Ministry' field from Asana to our new 'organizer' field:
+            organizer      = get_cf(task, "Ministry") or "Asana Import"
+            # Optionally, you can keep the ministry value as well:
+            ministry       = get_cf(task, "Ministry") or ""
+            website_trigger= get_cf(task, "Website Trigger") or "Publish"
+            registration   = get_cf(task, "Registration") or ""
+            description    = get_cf(task, "Content") or title
+            image          = get_cf(task, "Graphics") or ""
+            location       = get_cf(task, "Locations") or ""
             
             new_event = {
                 "asana_task_gid": asana_task_gid,
                 "event_status": event_status,
                 "ministry": ministry,
+                "organizer": organizer,
                 "website_trigger": website_trigger,
                 "registration": registration,
                 "title": title,
