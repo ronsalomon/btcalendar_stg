@@ -6,20 +6,15 @@
     // Retrieve data attributes from the clicked element
     const title = el.getAttribute('data-title') || "Event Title";
     const date = el.getAttribute('data-date') || "";
-    const time = el.getAttribute('data-time') || "";
     const location = el.getAttribute('data-location') || "Location not provided";
     const organizer = el.getAttribute('data-organizer') || "Organizer not provided";
     const description = el.getAttribute('data-description') || "";
-    const tags = el.getAttribute('data-tags') || "";
-    const image = el.getAttribute('data-image') || "";
   
     // Update modal elements
     const modalTitle = document.getElementById('modalEventTitle');
     const modalDescription = document.getElementById('modalEventDescription');
     const modalLocation = document.getElementById('modalEventLocation');
     const modalOrganizer = document.getElementById('modalEventOrganizer');
-    const modalTags = document.getElementById('modalEventTags');
-    const modalImage = document.getElementById('modalEventImage');
     const modalMonth = document.getElementById('modalEventMonth');
     const modalDay = document.getElementById('modalEventDay');
   
@@ -33,11 +28,11 @@
       extraLink = '<br/><a href="https://www.brooklyntabernacle.org/connect/young-adult-ministry/" target="_blank">Sanctus Website</a>';
     } else if (organizer === "BTYM") {
       extraLink = '<br/><a href="https://www.brooklyntabernacle.org/connect/youth-ministry/" target="_blank">BTYM Website</a>';
-    } else if (organizer.toLowerCase() === "women's ministry") {
+    } else if (organizer.toLowerCase() === "women\'s ministry") {
       extraLink = '<br/><a href="https://www.brooklyntabernacle.org/connect/womens-ministry/" target="_blank">The Exchange Website</a>';
     } else if (organizer.startsWith("BT Kids")) {
       extraLink = '<br/><a href="https://www.brooklyntabernacle.org/connect/childrens-ministry/" target="_blank">BT Kids Website</a>';
-    } else if (organizer.toLowerCase() === "men's ministry") {
+    } else if (organizer.toLowerCase() === "men\'s ministry") {
       extraLink = '<br/><a href="https://www.brooklyntabernacle.org/connect/mens-ministry/" target="_blank">Men\'s Website</a>';
     } else if (organizer === "Marriage Ministry") {
       extraLink = '<br/><a href="https://www.brooklyntabernacle.org/connect/marriage-ministry/" target="_blank">Marriage Website</a>';

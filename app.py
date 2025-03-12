@@ -574,6 +574,7 @@ def update_event(event):
     event["id"] = updated_id
     return event
 
+
 def process_asana_tasks():
     """
     Fetch tasks from Asana and update corresponding events in the DB if they already exist,
@@ -603,15 +604,25 @@ def process_asana_tasks():
             
             # Map custom fields:
             event_status   = get_cf(task, "Event Status") or "Approved"
-            # Here we map the 'Ministry' field from Asana to our new 'organizer' field:
-            organizer      = get_cf(task, "Ministry") or "Asana Import"
-            # Optionally, you can keep the ministry value as well:
+            # Map 'Ministry' to both ministry and organizer fields.
             ministry       = get_cf(task, "Ministry") or ""
+            organizer      = ministry or "Asana Import"
             website_trigger= get_cf(task, "Website Trigger") or "Publish"
             registration   = get_cf(task, "Registration") or ""
             description    = get_cf(task, "Content") or title
             image          = get_cf(task, "Graphics") or ""
-            location       = get_cf(task, "Locations") or ""
+            
+            # Retrieve and transform location.
+            location = get_cf(task, "Locations") or ""
+            location = location.strip()
+            if location.startswith("17 -"):
+                location = "17 Smith Street"
+            elif location.startswith("163"):
+                location = "163 Livingston Street"
+            elif location.startswith("392"):
+                location = "392 Fulton Street"
+            elif location.startswith("190"):
+                location = "190 Livingston Street"
             
             new_event = {
                 "asana_task_gid": asana_task_gid,
