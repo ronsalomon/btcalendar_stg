@@ -1,5 +1,4 @@
 <!-- event_detail_fragment.html -->
-
 <div class="modal-overlay" id="eventModalOverlay">
   <div class="modal-content" id="eventModalContent">
     <button class="close-btn" id="closeEventModalBtn">&times;</button>
@@ -30,13 +29,16 @@
     <div class="modal-body">
       <div class="modal-body-left">
         <div class="modal-description" id="modalEventDescription">Event description goes here.</div>
-        <div class="modal-register-button"><a href="#" class="register-button">Register</a></div>    
+        <!-- Registration button container -->
+        <div class="modal-register-button" id="modalEventRegister"></div>    
       </div> 
       <div class="modal-body-right">
         Date<span class="mobal-event-date" id="modalEventDate"></span>
         Time<span class="mobal-event-time" id="modalEventTime"></span>
         Location<span class="mobal-event-location" id="modalEventLocation"></span>
         Organizer<span class="mobal-event-organizer" id="modalEventOrganizer"></span>
+        <br/>
+        <a href="#" id="modalEventGetDirections" onclick="getDirections()">Get Directions</a>
       </div>
       <div class="tags" id="modalEventTags">
         <span>Tag1</span>

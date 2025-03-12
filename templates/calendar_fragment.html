@@ -20,24 +20,21 @@
             </div>
             {% if day_date.month == month and day_date.day in events_monthly %}
               {% for event in events_monthly[day_date.day] %}
-                {% if event.start_date|trim and event.start_time|trim %}
-                  {% set event_dt = datetime.strptime(event.start_date ~ " " ~ event.start_time, "%Y-%m-%d %H:%M") %}
-                  {% set time_str = event_dt.strftime("%I:%M%p").lstrip("0").lower() %}
-                {% else %}
-                  {% set event_dt = datetime.strptime("2025-02-14 19:00", "%Y-%m-%d %H:%M") %}
-                  {% set time_str = "7:00pm" %}
-                {% endif %}
+                {% set event_dt = datetime.strptime(event.start_date ~ " " ~ event.start_time, "%Y-%m-%d %H:%M") %}
+                {% set time_str = event_dt.strftime("%I:%M%p").lstrip("0").lower() %}
                 <div class="event-container clickable-event" onclick="openEventModal(this)"
-                     data-title="{{ event.title }}"
-                     data-date="{{ event.start_date }}"
-                     data-time="{{ time_str }}"
-                     data-description="{{ event.description }}"
-                     data-organizer="{{ event.organizer }}"
-                     {% if event.image %} data-image="{{ event.image }}" {% endif %}
-                     {% if event.location %} data-location="{{ event.location }}" {% endif %}>
+                    data-title="{{ event.title }}"
+                    data-date="{{ event.start_date }}"
+                    data-time="{{ event.start_time }}"
+                    data-description="{{ event.description }}"
+                    data-location="{{ event.location }}"
+                    data-organizer="{{ event.organizer }}"
+                    data-registration="{{ event.registration }}"
+                    {% if event.image %} data-image="{{ event.image }}" {% endif %}>
                   <div class="event-item">
                     <strong>{{ time_str }}</strong> {{ event.title }}
                   </div>
+                  <!-- Tooltip markup -->
                   <div class="event-tooltip">
                     {% if event.image %}
                       <div class="tooltip-image-bg">

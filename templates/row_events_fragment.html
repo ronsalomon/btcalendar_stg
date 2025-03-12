@@ -6,7 +6,8 @@
          data-date="{{ er.start_date }}"
          data-time="{{ er.start_time }}"
          data-description="{{ er.description }}"
-         data-organizer="{{ event.organizer }}"
+         data-organizer="{{ er.organizer }}"
+         data-registration="{{ er.registration }}"
          {% if er.image %} data-image="{{ er.image }}" {% endif %}
          {% if er.location %} data-location="{{ er.location }}" {% endif %}>
       <div class="modern-row-weekday">

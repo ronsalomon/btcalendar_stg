@@ -9,20 +9,24 @@
     const location = el.getAttribute('data-location') || "Location not provided";
     const organizer = el.getAttribute('data-organizer') || "Organizer not provided";
     const description = el.getAttribute('data-description') || "";
+    const image = el.getAttribute('data-image') || "";
+    const registration = el.getAttribute('data-registration') || "";
   
     // Update modal elements
     const modalTitle = document.getElementById('modalEventTitle');
     const modalDescription = document.getElementById('modalEventDescription');
     const modalLocation = document.getElementById('modalEventLocation');
     const modalOrganizer = document.getElementById('modalEventOrganizer');
+    const modalImage = document.getElementById('modalEventImage');
     const modalMonth = document.getElementById('modalEventMonth');
     const modalDay = document.getElementById('modalEventDay');
+    const modalRegister = document.getElementById('modalEventRegister');
   
     if (modalTitle) modalTitle.innerText = title;
     if (modalDescription) modalDescription.innerText = description;
     if (modalLocation) modalLocation.innerText = location;
   
-    // Build extra hyperlink if organizer matches one of the conditions
+    // Build extra hyperlink for Organizer if applicable
     let extraLink = "";
     if (organizer === "Sanctus") {
       extraLink = '<br/><a href="https://www.brooklyntabernacle.org/connect/young-adult-ministry/" target="_blank">Sanctus Website</a>';
@@ -44,6 +48,26 @@
       modalOrganizer.innerHTML = organizer + extraLink;
     }
   
+    // Set the modal image if provided
+    if (modalImage) {
+      if (image) {
+        modalImage.src = image;
+        modalImage.style.display = 'block';
+      } else {
+        modalImage.style.display = 'none';
+      }
+    }
+  
+    // Update the registration button if registration is provided.
+    if (modalRegister) {
+      if (registration.trim() !== "") {
+        // Here you could also set the href of the button if needed.
+        modalRegister.innerHTML = '<a href="#" class="register-button">Register</a>';
+      } else {
+        modalRegister.innerHTML = ""; // Clear out if no registration
+      }
+    }
+  
     // Process the date to update the modal's date block (month and day)
     if (date && modalMonth && modalDay) {
       const d = new Date(date);
@@ -63,8 +87,38 @@
     }
   }
   
+  function getDirections() {
+    const modalLocation = document.getElementById('modalEventLocation');
+    if (!modalLocation) return;
+    
+    const destinationAddress = modalLocation.innerText + ", Brooklyn, NY 11201";
+    const destination = encodeURIComponent(destinationAddress);
+  
+    const openDirections = (origin) => {
+      let originParam = "";
+      if (origin) {
+        originParam = `&origin=${encodeURIComponent(origin)}`;
+      }
+      const url = `https://www.google.com/maps/dir/?api=1${originParam}&destination=${destination}`;
+      window.open(url, "_blank");
+    };
+  
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const origin = position.coords.latitude + "," + position.coords.longitude;
+          openDirections(origin);
+        },
+        (error) => {
+          openDirections(null);
+        }
+      );
+    } else {
+      openDirections(null);
+    }
+  }
+  
   document.addEventListener('DOMContentLoaded', function() {
-    // Attach close event listeners
     const closeBtn = document.getElementById('closeEventModalBtn');
     const overlay = document.getElementById('eventModalOverlay');
     if (closeBtn) {
@@ -78,7 +132,6 @@
       });
     }
   
-    // Event delegation: any click on an element with class "clickable-event" triggers the modal
     document.addEventListener('click', function(e) {
       let target = e.target;
       while (target && target !== document) {
@@ -94,4 +147,5 @@
   
   window.openEventModal = openEventModal;
   window.CloseEvent = closeEventModal;
+  window.getDirections = getDirections;
 })();

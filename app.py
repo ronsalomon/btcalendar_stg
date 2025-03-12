@@ -349,6 +349,7 @@ def index():
                            display_date_iso=display_date_iso,
                            default_view="calendar")
 
+
 @app.route("/calendar.ics")
 def download_ics():
     current_year = date.today().year
@@ -604,16 +605,19 @@ def process_asana_tasks():
             
             # Map custom fields:
             event_status   = get_cf(task, "Event Status") or "Approved"
-            # Map 'Ministry' to both ministry and organizer fields.
             ministry       = get_cf(task, "Ministry") or ""
             organizer      = ministry or "Asana Import"
             website_trigger= get_cf(task, "Website Trigger") or "Publish"
             registration   = get_cf(task, "Registration") or ""
             description    = get_cf(task, "Content") or title
             image          = get_cf(task, "Graphics") or ""
+            location       = get_cf(task, "Locations") or ""
             
-            # Retrieve and transform location.
-            location = get_cf(task, "Locations") or ""
+            # Transform Dropbox links for images if needed
+            if "dropbox.com" in image and "dl=0" in image:
+                image = image.replace("dl=0", "raw=1")
+            
+            # Transform location values as before:
             location = location.strip()
             if location.startswith("17 -"):
                 location = "17 Smith Street"
@@ -650,6 +654,7 @@ def process_asana_tasks():
                 
     except Exception as e:
         print("Error processing Asana tasks:", e)
+
 
 
 def start_asana_scheduler():

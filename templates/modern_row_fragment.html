@@ -83,55 +83,49 @@
 
   <!-- modern_row_fragment.html -->
   <div class="modern-row-events">
-    {% for event in events %}
+    {% for er in events %}
       <div class="modern-row-event clickable-event" onclick="openEventModal(this)"
-           data-title="{{ event.title }}"
-           data-date="{{ event.start_date }}"
-           data-time="{{ event.start_time }}"
-           data-description="{{ event.description }}"
-           data-organizer="{{ event.organizer }}"
-           {% if event.image %} data-image="{{ event.image }}" {% endif %}
-           {% if event.location %} data-location="{{ event.location }}" {% endif %}>
+          data-title="{{ er.title }}"
+          data-date="{{ er.start_date }}"
+          data-time="{{ er.start_time }}"
+          data-description="{{ er.description }}"
+          data-organizer="{{ er.organizer }}"
+          data-registration="{{ er.registration }}"
+          {% if er.image %} data-image="{{ er.image }}" {% endif %}
+          {% if er.location %} data-location="{{ er.location }}" {% endif %}>
         <div class="modern-row-weekday">
-          <span>{{ datetime.strptime(event.start_date, "%Y-%m-%d").strftime("%a")|upper }}</span>
-          <span>{{ datetime.strptime(event.start_date, "%Y-%m-%d").day }}</span>
+          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").strftime("%a")|upper }}</span>
+          <span>{{ datetime.strptime(er.start_date, "%Y-%m-%d").day }}</span>                  
         </div>
         <div class="modern-row-event-content">
-          <div class="event-title"><h4>{{ event.title }}</h4></div>
+          <div class="event-title"><h4>{{ er.title }}</h4></div>
           <div class="event-date-time">
-            <span class="date-icon">
-              <i class="fa fa-calendar" style="font-size:15px;color:#506688;"></i>
-            </span>
-            <span class="event-date" data-date="{{ event.start_date }}">
-              {% set edate = datetime.strptime(event.start_date, "%Y-%m-%d") %}
+            <span class="date-icon"><i class="fa fa-calendar" style="font-size:15px;color:#506688;"></i></span>
+            <span class="event-date" data-date="{{ er.start_date }}">
+              {% set edate = datetime.strptime(er.start_date, "%Y-%m-%d") %}
               {{ edate.strftime("%B") }} {{ edate.day }}
             </span>
-            <span class="time-icon">
-              <i class="fa-solid fa-clock" style="font-size: 15px; color:#506688;"></i>
-            </span>
-            <span class="event-time" data-time="{{ event.start_time }}">
-              {% set etime = datetime.strptime(event.start_time, "%H:%M") %}
+            <span class="time-icon"><i class="fa-solid fa-clock" style="font-size: 15px; color:#506688;"></i></span>
+            <span class="event-time" data-time="{{ er.start_time }}">
+              {% set etime = datetime.strptime(er.start_time, "%H:%M") %}
               {{ etime.strftime("%I:%M%p").lstrip("0").lower() }}
             </span>
           </div>
           <p class="event-description">
-            {{ event.description }}
+            {{ er.description }}
           </p>
           <div class="event-date-time">
-            <span class="time-icon">
-              <i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i>
-            </span>
+            <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>
           </div>
         </div>
-        {% if event.image %}
+        {% if er.image %}
           <div class="modern-row-event-image">
-            <img src="{{ event.image }}" alt="{{ event.title }}">
+            <img src="{{ er.image }}" alt="{{ er.title }}">
           </div>
         {% endif %}
       </div>
     {% endfor %}
-  </div>
-  
+  </div> 
 </div>
 
 <script>
