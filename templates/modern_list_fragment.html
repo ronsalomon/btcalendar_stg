@@ -88,16 +88,20 @@
           data-title="{{ ev.title }}"
           data-date="{{ ev.start_date }}"
           data-time="{{ ev.start_time }}"
-          data-description="{{ ev.description }}"
+          data-description="{{ ev.description|safe }}"
           data-organizer="{{ ev.organizer }}"
           data-registration="{{ ev.registration }}"
           {% if ev.image %} data-image="{{ ev.image }}" {% endif %}
           {% if ev.location %} data-location="{{ ev.location }}" {% endif %}>
-        {% if ev.image %}
+          {% if ev.image_data %}
           <div class="modern-list-event-image">
-            <img src="{{ ev.image }}" alt="{{ ev.title }}">
+            <img src="{{ url_for('event_image', event_id=ev.asana_task_gid) }}" alt="{{ ev.title }}">
           </div>
-        {% endif %}
+          {% elif ev.image %}
+            <div class="modern-list-event-image">
+              <img src="{{ ev.image }}" alt="{{ ev.title }}">
+            </div>
+          {% endif %}
         <div class="modern-list-event-content">
           <div class="event-title"><h4>{{ ev.title }}</h4></div>
           <div class="event-date-time">
@@ -113,7 +117,7 @@
             </span>
           </div>
           <p class="event-description">
-            {{ ev.description }}
+            {{ ev.description|safe }}
           </p>
           <div class="event-date-time">
             <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>

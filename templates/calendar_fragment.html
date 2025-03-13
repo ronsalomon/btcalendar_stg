@@ -26,7 +26,7 @@
                     data-title="{{ event.title }}"
                     data-date="{{ event.start_date }}"
                     data-time="{{ event.start_time }}"
-                    data-description="{{ event.description }}"
+                    data-description="{{ event.description|safe }}"
                     data-location="{{ event.location }}"
                     data-organizer="{{ event.organizer }}"
                     data-registration="{{ event.registration }}"
@@ -36,7 +36,11 @@
                   </div>
                   <!-- Tooltip markup -->
                   <div class="event-tooltip">
-                    {% if event.image %}
+                    {% if event.image_data %}
+                    <div class="tooltip-image-bg">
+                      <img src="{{ url_for('event_image', event_id=event.asana_task_gid) }}" alt="Event Image" class="tooltip-image">
+                    </div>
+                    {% elif event.image %}
                       <div class="tooltip-image-bg">
                         <img src="{{ event.image }}" alt="Event Image" class="tooltip-image">
                       </div>
@@ -46,7 +50,7 @@
                       {{ event_dt.strftime("%a, %b %d") }} @ {{ time_str }}
                     </div>
                     <div class="tooltip-description">
-                      {{ event.description }}
+                      {{ event.description|safe }}
                     </div>
                   </div>
                 </div>
