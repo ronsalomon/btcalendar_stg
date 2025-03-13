@@ -1,4 +1,20 @@
 (function() {
+  // Helper function to clean description HTML by removing image containers
+  function cleanDescription(descriptionHtml) {
+    // Create a temporary DOM element to manipulate the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = descriptionHtml;
+    
+    // Remove image containers with class ai1ec-event-avatar or timely
+    const imageContainers = tempDiv.querySelectorAll('.ai1ec-event-avatar, .timely');
+    imageContainers.forEach(container => {
+      container.remove();
+    });
+    
+    // Return the cleaned HTML
+    return tempDiv.innerHTML;
+  }
+
   function openEventModalImpl(el) {
     const overlay = document.getElementById('eventModalOverlay');
     if (!overlay) return;
@@ -26,8 +42,8 @@
     const modalRegister = document.getElementById('modalEventRegister');
   
     if (modalTitle) modalTitle.innerText = title;
-    // KEY FIX: Use innerHTML instead of innerText for HTML content
-    if (modalDescription) modalDescription.innerHTML = description;
+    // Use the cleanDescription function and innerHTML to render clean HTML
+    if (modalDescription) modalDescription.innerHTML = cleanDescription(description);
     if (modalLocation) modalLocation.innerText = location;
   
     // Build extra hyperlink for Organizer if applicable
@@ -153,6 +169,6 @@
   
   // Make functions available globally
   window.openEventModal = openEventModalImpl;
-  window.closeEventModal = closeEventModal;
+  window.CloseEvent = closeEventModal;
   window.getDirections = getDirections;
 })();
