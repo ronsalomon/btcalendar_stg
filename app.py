@@ -13,7 +13,7 @@ import asyncio
 import httpx
 import pytz
 from dotenv import load_dotenv
-from waitress import serve
+
 
 # Load environment variables from .env (if available)
 load_dotenv()
