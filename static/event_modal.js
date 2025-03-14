@@ -1,5 +1,21 @@
 (function() {
-  function openEventModal(el) {
+  // Helper function to clean description HTML by removing image containers
+  function cleanDescription(descriptionHtml) {
+    // Create a temporary DOM element to manipulate the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = descriptionHtml;
+    
+    // Remove image containers with class ai1ec-event-avatar or timely
+    const imageContainers = tempDiv.querySelectorAll('.ai1ec-event-avatar, .timely');
+    imageContainers.forEach(container => {
+      container.remove();
+    });
+    
+    // Return the cleaned HTML
+    return tempDiv.innerHTML;
+  }
+
+  function openEventModalImpl(el) {
     const overlay = document.getElementById('eventModalOverlay');
     if (!overlay) return;
   
@@ -12,6 +28,9 @@
     const image = el.getAttribute('data-image') || "";
     const registration = el.getAttribute('data-registration') || "";
   
+    // Debug output for image
+    console.log("Event image URL:", image);
+  
     // Update modal elements
     const modalTitle = document.getElementById('modalEventTitle');
     const modalDescription = document.getElementById('modalEventDescription');
@@ -23,7 +42,8 @@
     const modalRegister = document.getElementById('modalEventRegister');
   
     if (modalTitle) modalTitle.innerText = title;
-    if (modalDescription) modalDescription.innerText = description;
+    // Use the cleanDescription function and innerHTML to render clean HTML
+    if (modalDescription) modalDescription.innerHTML = cleanDescription(description);
     if (modalLocation) modalLocation.innerText = location;
   
     // Build extra hyperlink for Organizer if applicable
@@ -50,10 +70,12 @@
   
     // Set the modal image if provided
     if (modalImage) {
-      if (image) {
+      if (image && image.trim() !== "") {
+        console.log("Setting image src to:", image);
         modalImage.src = image;
         modalImage.style.display = 'block';
       } else {
+        console.log("No image provided, hiding image element");
         modalImage.style.display = 'none';
       }
     }
@@ -137,7 +159,7 @@
       while (target && target !== document) {
         if (target.classList && target.classList.contains('clickable-event')) {
           e.preventDefault();
-          openEventModal(target);
+          openEventModalImpl(target);
           break;
         }
         target = target.parentElement;
@@ -145,7 +167,8 @@
     });
   });
   
-  window.openEventModal = openEventModal;
+  // Make functions available globally
+  window.openEventModal = openEventModalImpl;
   window.CloseEvent = closeEventModal;
   window.getDirections = getDirections;
 })();

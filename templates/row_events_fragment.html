@@ -5,7 +5,7 @@
          data-title="{{ er.title }}"
          data-date="{{ er.start_date }}"
          data-time="{{ er.start_time }}"
-         data-description="{{ er.description }}"
+         data-description="{{ er.description|safe }}"
          data-organizer="{{ er.organizer }}"
          data-registration="{{ er.registration }}"
          {% if er.image %} data-image="{{ er.image }}" {% endif %}
@@ -33,16 +33,14 @@
           </span>
         </div>
         <p class="event-description">
-          {{ er.description }}
+          {{ er.description|safe }}
         </p>
         <div class="event-date-time">
           <span class="time-icon"><i class="fa-solid fa-turn-down rotate_arrow" style="font-size: 15px; color:#506688;"></i></span>
         </div>
       </div>
-      {% if er.image %}
-      <div class="modern-row-event-image">
-        <img src="{{ er.image }}" alt="{{ er.title }}">
-      </div>
+      {% if er.image_data %}
+      <img src="{{ url_for('event_image', event_id=event.asana_task_gid) }}" alt="{{ er.title }}">
       {% endif %}
     </div>
   {% endfor %}

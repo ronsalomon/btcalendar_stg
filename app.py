@@ -2,16 +2,18 @@ import os
 import calendar
 import uuid
 import psycopg2
+import requests
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from xml.sax.saxutils import escape
-
-# Additional imports for Asana integration and scheduling
+from flask import Response
+from bs4 import BeautifulSoup
 from apscheduler.schedulers.background import BackgroundScheduler
 import asyncio
 import httpx
 import pytz
 from dotenv import load_dotenv
+
 
 # Load environment variables from .env (if available)
 load_dotenv()
@@ -20,10 +22,7 @@ app = Flask(__name__)
 app.jinja_env.globals.update(datetime=datetime)
 
 # Use the provided Render PostgreSQL URL, or override via DATABASE_URL environment variable.
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://btwpcaldb_user:5tBjRRmg6AlRyxxyCvCpI6mmbZMqQEd7@dpg-cv7qsaij1k6c739h9mmg-a.virginia-postgres.render.com/btwpcaldb"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # --------------------------
 # Database functions
@@ -64,7 +63,8 @@ def load_events():
     cur = conn.cursor()
     cur.execute("""
         SELECT asana_task_gid, event_status, ministry, organizer, website_trigger, registration, title,
-               start_date, start_time, end_date, end_time, location, description, image
+               start_date, start_time, end_date, end_time, location, description, image, image_url,
+               CASE WHEN image_data IS NOT NULL THEN true ELSE false END as image_data
         FROM events
     """)
     rows = cur.fetchall()
@@ -84,22 +84,70 @@ def load_events():
             "end_time": row[10].strftime("%H:%M") if row[10] else "",
             "location": row[11],
             "description": row[12],
-            "image": row[13]
+            "image": row[13],
+            "image_url": row[14],
+            "image_data": row[15]
         })
     cur.close()
     conn.close()
     return events
 
+
+@app.route('/event_image/<event_id>')
+def event_image(event_id):
+    """Serve an event image directly from the database."""
+    conn = None
+    cur = None
+    
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Debug info
+        print(f"Fetching image for event ID: {event_id}")
+        
+        # Use simple binary data selection to avoid encoding issues
+        cur.execute("SELECT image_data FROM events WHERE asana_task_gid = %s", (event_id,))
+        result = cur.fetchone()
+        
+        if result and result[0]:  # If image data exists
+            # Debug info
+            print(f"Found image data for event ID {event_id}: {len(result[0])} bytes")
+            
+            # Default to JPEG content type
+            content_type = 'image/jpeg'
+            
+            # Serve the image directly from the database
+            return Response(result[0], mimetype=content_type)
+        else:
+            # Debug info
+            print(f"No image data found for event ID: {event_id}")
+            return '', 404  # Not found
+    except Exception as e:
+        print(f"Error serving image: {e}")
+        return '', 500  # Server error
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 def add_event(event):
     """Insert a new event into the database and return the inserted event with its new id."""
     conn = get_db_connection()
     cur = conn.cursor()
+    
+    # Prepare image_data for database insertion if it exists
+    image_data = None
+    if "image_data" in event and event["image_data"]:
+        image_data = psycopg2.Binary(event["image_data"])
+        
     cur.execute("""
          INSERT INTO events (
              asana_task_gid, event_status, ministry, organizer, website_trigger, registration, title,
-             start_date, start_time, end_date, end_time, location, description, image
+             start_date, start_time, end_date, end_time, location, description, image, image_url, image_data
          )
-         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
          RETURNING id
     """, (
          event.get("asana_task_gid"),
@@ -115,7 +163,9 @@ def add_event(event):
          event.get("end_time"),
          event.get("location"),
          event.get("description"),
-         event.get("image")
+         event.get("image"),
+         event.get("image_url"),
+         image_data
     ))
     new_id = cur.fetchone()[0]
     conn.commit()
@@ -124,49 +174,6 @@ def add_event(event):
     event["id"] = new_id
     return event
 
-def update_event(event):
-    """Update an existing event in the database based on asana_task_gid."""
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("""
-         UPDATE events
-         SET event_status = %s,
-             ministry = %s,
-             organizer = %s,
-             website_trigger = %s,
-             registration = %s,
-             title = %s,
-             start_date = %s,
-             start_time = %s,
-             end_date = %s,
-             end_time = %s,
-             location = %s,
-             description = %s,
-             image = %s
-         WHERE asana_task_gid = %s
-         RETURNING id
-    """, (
-         event.get("event_status"),
-         event.get("ministry"),
-         event.get("organizer"),
-         event.get("website_trigger"),
-         event.get("registration"),
-         event.get("title"),
-         event.get("start_date"),
-         event.get("start_time"),
-         event.get("end_date"),
-         event.get("end_time"),
-         event.get("location"),
-         event.get("description"),
-         event.get("image"),
-         event.get("asana_task_gid")
-    ))
-    updated_id = cur.fetchone()[0]
-    conn.commit()
-    cur.close()
-    conn.close()
-    event["id"] = updated_id
-    return event
 
 def event_exists(asana_task_gid):
     """Check if an event with the given Asana task gid exists."""
@@ -186,7 +193,8 @@ def get_event(asana_task_gid):
         SELECT asana_task_gid, event_status, ministry, organizer, website_trigger, registration, title,
                to_char(start_date, 'YYYY-MM-DD'), to_char(start_time, 'HH24:MI'),
                to_char(end_date, 'YYYY-MM-DD'), to_char(end_time, 'HH24:MI'),
-               location, description, image
+               location, description, image, image_url,
+               CASE WHEN image_data IS NOT NULL THEN true ELSE false END as has_image_data
         FROM events WHERE asana_task_gid = %s
     """, (asana_task_gid,))
     row = cur.fetchone()
@@ -207,9 +215,85 @@ def get_event(asana_task_gid):
             "end_time": row[10],
             "location": row[11],
             "description": row[12],
-            "image": row[13]
+            "image": row[13],
+            "image_url": row[14],
+            "image_data": row[15]  # This is just a boolean indicating presence of image data
         }
     return None
+
+def sanitize_html(html_content):
+    """Sanitize HTML content to remove dangerous tags and attributes."""
+    if not html_content:
+        return ""
+    
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Remove script, iframe, and other potentially dangerous tags
+    for tag in soup.find_all(['script', 'iframe', 'embed', 'object']):
+        tag.decompose()
+    
+    # Remove on* attributes (onclick, onload, etc.)
+    for tag in soup.find_all(True):
+        for attr in list(tag.attrs):
+            if attr.startswith('on'):
+                del tag[attr]
+    
+    return str(soup)
+
+
+def update_event(event):
+    """Update an existing event in the database based on asana_task_gid."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Prepare image_data for database insertion if it exists
+    image_data = None
+    if "image_data" in event and event["image_data"]:
+        image_data = psycopg2.Binary(event["image_data"])
+        
+    cur.execute("""
+         UPDATE events
+         SET event_status = %s,
+             ministry = %s,
+             organizer = %s,
+             website_trigger = %s,
+             registration = %s,
+             title = %s,
+             start_date = %s,
+             start_time = %s,
+             end_date = %s,
+             end_time = %s,
+             location = %s,
+             description = %s,
+             image = %s,
+             image_url = %s,
+             image_data = %s
+         WHERE asana_task_gid = %s
+         RETURNING id
+    """, (
+         event.get("event_status"),
+         event.get("ministry"),
+         event.get("organizer"),
+         event.get("website_trigger"),
+         event.get("registration"),
+         event.get("title"),
+         event.get("start_date"),
+         event.get("start_time"),
+         event.get("end_date"),
+         event.get("end_time"),
+         event.get("location"),
+         event.get("description"),
+         event.get("image"),
+         event.get("image_url"),
+         image_data,
+         event.get("asana_task_gid")
+    ))
+    updated_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    event["id"] = updated_id
+    return event
 
 # --------------------------
 # Cancellation adjustment helper
@@ -273,10 +357,33 @@ async def fetch_tasks_from_asana():
                 break
     return all_tasks
 
+def sanitize_html(html_content):
+    """Sanitize HTML content to remove dangerous tags and attributes."""
+    if not html_content:
+        return ""
+    
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Remove script, iframe, and other potentially dangerous tags
+    for tag in soup.find_all(['script', 'iframe', 'embed', 'object']):
+        tag.decompose()
+    
+    # Remove on* attributes (onclick, onload, etc.)
+    for tag in soup.find_all(True):
+        for attr in list(tag.attrs):
+            if attr.startswith('on'):
+                del tag[attr]
+    
+    return str(soup)
+
 def process_asana_tasks():
     try:
         tasks = asyncio.run(fetch_tasks_from_asana())
         print(f"[DEBUG] Fetched {len(tasks)} tasks from Asana")
+        
+        # Get the current year
+        current_year = datetime.now().year
+        print(f"[DEBUG] Filtering for events in {current_year}")
         
         def get_cf(task, field_name):
             for cf in task.get("custom_fields", []):
@@ -284,6 +391,8 @@ def process_asana_tasks():
                     return cf.get("display_value", "")
             return ""
         
+        added_count = 0
+        skipped_count = 0
         for task in tasks:
             asana_task_gid = task.get("gid")
             if not asana_task_gid:
@@ -292,6 +401,23 @@ def process_asana_tasks():
             title = task.get("name", "Unnamed Task")
             due_on = task.get("due_on")
             start_date = due_on if due_on else datetime.now().strftime("%Y-%m-%d")
+            
+            # Skip events not in the current year
+            try:
+                event_year = datetime.strptime(start_date, "%Y-%m-%d").year
+                if event_year != current_year:
+                    print(f"[DEBUG] Skipping event {title} from year {event_year}")
+                    skipped_count += 1
+                    continue
+            except ValueError:
+                print(f"[DEBUG] Couldn't parse date for event {title}, using default")
+                
+            # Check if the event already exists before proceeding
+            if event_exists(asana_task_gid):
+                print(f"[DEBUG] Event {title} already exists, skipping")
+                skipped_count += 1
+                continue
+                
             start_time = "09:00"
             end_time = "10:00"
             
@@ -301,6 +427,10 @@ def process_asana_tasks():
             website_trigger = get_cf(task, "Website Trigger") or "Publish"
             registration    = get_cf(task, "Registration") or ""
             description     = get_cf(task, "Content") or title
+            
+            # Apply HTML sanitization AFTER description is defined
+            description = sanitize_html(description)
+            
             image           = get_cf(task, "Graphics") or ""
             location        = get_cf(task, "Locations") or ""
             
@@ -317,6 +447,36 @@ def process_asana_tasks():
             elif location.startswith("190"):
                 location = "190 Livingston Street"
             
+            # Download image if URL exists
+            image_data = None
+            image_url = image
+            if image:
+                try:
+                    print(f"[DEBUG] Downloading image from {image}")
+                    # Add a user-agent header to mimic a browser
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    }
+                    response = requests.get(image, timeout=15, headers=headers)
+                    response.raise_for_status()
+                    image_data = response.content
+                    print(f"[DEBUG] Downloaded image: {len(image_data)} bytes")
+                    
+                    # Verify that we actually got an image
+                    if len(image_data) < 100:
+                        print(f"[WARNING] Downloaded file seems too small to be an image ({len(image_data)} bytes)")
+                        image_data = get_placeholder_image()
+                except requests.exceptions.HTTPError as e:
+                    if e.response.status_code == 403:
+                        print(f"[DEBUG] Access forbidden to image: {image}. Using placeholder.")
+                        image_data = get_placeholder_image()
+                    else:
+                        print(f"[DEBUG] HTTP error downloading image: {e}")
+                        image_data = get_placeholder_image()
+                except Exception as e:
+                    print(f"[DEBUG] Error downloading image: {e}")
+                    image_data = get_placeholder_image()
+            
             new_event = {
                 "asana_task_gid": asana_task_gid,
                 "event_status": event_status,
@@ -331,28 +491,22 @@ def process_asana_tasks():
                 "end_time": end_time,
                 "location": location,
                 "description": description,
-                "image": image
+                "image": image,
+                "image_url": image_url,
+                "image_data": image_data
             }
             
             new_event = adjust_for_cancellation(new_event)
             
-            if event_exists(asana_task_gid):
-                existing_event = get_event(asana_task_gid)
-                fields_to_compare = ["event_status", "ministry", "organizer", "website_trigger",
-                                     "registration", "title", "start_date", "start_time",
-                                     "end_date", "end_time", "location", "description", "image"]
-                update_needed = any(new_event[field] != existing_event.get(field, "") for field in fields_to_compare)
-                if update_needed:
-                    update_event(new_event)
-                    print(f"[DEBUG] Updated event for task: {new_event['title']}")
-                else:
-                    print(f"[DEBUG] No changes for task: {title}; skipping update.")
-            else:
-                add_event(new_event)
-                print(f"[DEBUG] Inserted event for task: {new_event['title']}")
+            # Only add the event if it doesn't exist
+            add_event(new_event)
+            added_count += 1
+            print(f"[DEBUG] Inserted event for task: {new_event['title']}")
                 
+        print(f"[DEBUG] Asana sync complete. Added: {added_count}, Skipped: {skipped_count}")
     except Exception as e:
         print("Error processing Asana tasks:", e)
+
 
 def start_asana_scheduler():
     scheduler = BackgroundScheduler()
@@ -391,6 +545,7 @@ def events_api():
         added_event = add_event(new_event)
         return jsonify({"status": "success", "event": added_event}), 201
 
+
 @app.route("/api/events/date/<date_str>")
 def events_by_date(date_str):
     try:
@@ -407,6 +562,7 @@ def events_by_date(date_str):
         return jsonify(filtered_events)
     except ValueError:
         return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+
 
 @app.route("/api/list_events/<date_str>")
 def list_events(date_str):
@@ -702,7 +858,9 @@ def start_asana_scheduler():
     scheduler.start()
 
 if __name__ == "__main__":
-    init_db()  # Ensure the events table exists on startup.
-    # Removed ICS import code.
-    start_asana_scheduler()  # Start background job to fetch and import Asana tasks.
-    app.run(debug=True)
+    init_db()
+    if os.getenv('ASANA_TOKEN') and os.getenv('ASANA_DEMO_PROJECT_ID'):
+        start_asana_scheduler()
+    app.run(debug=True, threaded=False)
+
+    serve(app, host="127.0.0.1", port=5000)
