@@ -3,16 +3,22 @@ import calendar
 import uuid
 import psycopg2
 import requests
+import asyncio
+import httpx
+import pytz
+import icalendar
+from datetime import datetime, timedelta
+from bs4 import BeautifulSoup
+from flask import jsonify
+from dotenv import load_dotenv
 from datetime import datetime, date, timedelta
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from xml.sax.saxutils import escape
 from flask import Response
 from bs4 import BeautifulSoup
 from apscheduler.schedulers.background import BackgroundScheduler
-import asyncio
-import httpx
-import pytz
-from dotenv import load_dotenv
+from io import BytesIO
+from PIL import Image
 
 
 # Load environment variables from .env (if available)
@@ -133,14 +139,17 @@ def event_image(event_id):
             conn.close()
 
 def add_event(event):
-    """Insert a new event into the database and return the inserted event with its new id."""
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # Prepare image_data for database insertion if it exists
+    # Prepare image_data for database insertion
     image_data = None
     if "image_data" in event and event["image_data"]:
-        image_data = psycopg2.Binary(event["image_data"])
+        # Only wrap if it's not already an instance of psycopg2.Binary
+        if not isinstance(event["image_data"], psycopg2.Binary):
+            image_data = psycopg2.Binary(event["image_data"])
+        else:
+            image_data = event["image_data"]
         
     cur.execute("""
          INSERT INTO events (
@@ -323,6 +332,182 @@ def adjust_for_cancellation(event):
                 else:
                     event["description"] = "\n".join(lines[1:]).strip()
     return event
+
+
+# --------------------------
+# Import ICS Url Function
+# --------------------------
+
+def strip_images(html_content):
+    """Remove all <img> tags from HTML content."""
+    soup = BeautifulSoup(html_content, 'html.parser')
+    for img in soup.find_all('img'):
+        img.decompose()
+    return str(soup)
+
+def truncate_title(raw_text, max_words=8):
+    """
+    Force the event title to at most `max_words` words,
+    so the monthly cell won't show a paragraph.
+    """
+    soup = BeautifulSoup(raw_text, 'html.parser')
+    text_only = soup.get_text(separator=" ").strip()
+    words = text_only.split()
+    if len(words) <= max_words:
+        return text_only
+    else:
+        return " ".join(words[:max_words]) + "…"
+
+def download_image(url):
+    """
+    Download image from `url` and return raw bytes.
+    Return None if there's any error or if the file is too small to be valid.
+    """
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.get(url, timeout=10, headers=headers)
+        resp.raise_for_status()
+        if len(resp.content) < 200:  # arbitrary minimal size check
+            return None
+        return resp.content
+    except:
+        return None
+
+@app.route("/import_ics", methods=["GET", "POST"])
+def import_ics():
+    if request.method == "GET":
+        ics_url = request.args.get("url")
+        if ics_url:
+            return process_ics_url(ics_url)
+        else:
+            return '''
+                <h2>Import ICS Calendar</h2>
+                <form method="post" action="/import_ics">
+                    <label for="ics_url">Enter ICS URL:</label>
+                    <input type="text" name="ics_url" id="ics_url" required style="width:400px;">
+                    <button type="submit">Import ICS</button>
+                </form>
+            '''
+    else:  # POST
+        ics_url = request.form.get("ics_url")
+        if not ics_url:
+            return jsonify({"error": "Missing ICS URL"}), 400
+        return process_ics_url(ics_url)
+
+
+def process_ics_url(ics_url):
+    logs = []
+    try:
+        resp = requests.get(ics_url, timeout=15)
+        resp.raise_for_status()
+        ics_data = resp.text
+        logs.append(f"Downloaded ICS from: {ics_url}")
+
+        cal = icalendar.Calendar.from_ical(ics_data)
+        added_count = 0
+        skipped_count = 0
+
+        for component in cal.walk():
+            if component.name == "VEVENT":
+                uid = str(component.get('uid', ''))
+                if not uid:
+                    continue  # skip if no UID
+
+                # 1) ICS summary & description
+                raw_summary = str(component.get('summary', 'No Title'))
+                raw_description = str(component.get('description', ''))
+
+                # 2) Truncate summary for monthly cell
+                short_title = truncate_title(raw_summary, max_words=8)
+
+                # 3) If ICS description is empty, put leftover summary in description
+                if not raw_description.strip():
+                    # (We won't do leftover lines logic, just reuse the entire raw_summary)
+                    raw_description = raw_summary
+
+                # 4) Remove any leftover HTML from description
+                safe_desc = strip_images(sanitize_html(raw_description))
+
+                # 5) Parse dtstart / dtend
+                dtstart = component.get('dtstart').dt
+                if isinstance(dtstart, datetime):
+                    start_date = dtstart.strftime("%Y-%m-%d")
+                    start_time = dtstart.strftime("%H:%M")
+                else:
+                    start_date = dtstart.strftime("%Y-%m-%d")
+                    start_time = "00:00"
+
+                dtend = component.get('dtend')
+                if dtend:
+                    dtend_val = dtend.dt
+                    if isinstance(dtend_val, datetime):
+                        end_date = dtend_val.strftime("%Y-%m-%d")
+                        end_time = dtend_val.strftime("%H:%M")
+                    else:
+                        end_date = dtend_val.strftime("%Y-%m-%d")
+                        end_time = "00:00"
+                else:
+                    # default 1 hour after start
+                    if isinstance(dtstart, datetime):
+                        dtend_val = dtstart + timedelta(hours=1)
+                    else:
+                        dtend_val = datetime.combine(dtstart, datetime.min.time()) + timedelta(hours=1)
+                    end_date = dtend_val.strftime("%Y-%m-%d")
+                    end_time = dtend_val.strftime("%H:%M")
+
+                # 6) Extract image URL from ICS property like X-WP-IMAGES-URL
+                image_url = component.get('X-WP-IMAGES-URL')
+                if image_url:
+                    image_url = str(image_url)
+                else:
+                    image_url = ""
+
+                # 7) Download the image if found
+                image_data = None
+                if image_url.strip():
+                    logs.append(f"Found image URL for UID {uid}: {image_url}")
+                    downloaded = download_image(image_url)
+                    if downloaded:
+                        image_data = psycopg2.Binary(downloaded)
+                    else:
+                        logs.append(f"Failed to download or invalid image for {image_url}")
+                        image_url = ""  # reset if invalid
+
+                # 8) Build final event
+                new_event = {
+                    "asana_task_gid": uid,
+                    "event_status": "Imported",
+                    "ministry": "",
+                    "organizer": "ICS Import",
+                    "website_trigger": "Publish",
+                    "registration": "",
+                    "title": short_title,  # monthly cell sees only this short title
+                    "start_date": start_date,
+                    "start_time": start_time,
+                    "end_date": end_date,
+                    "end_time": end_time,
+                    "location": str(component.get('location', '')),
+                    "description": safe_desc,  # tooltip / modal
+                    "image": image_url,         # store the raw image URL
+                    "image_url": image_url,
+                    "image_data": image_data
+                }
+
+                # 9) Insert or skip if exists
+                if not event_exists(uid):
+                    add_event(new_event)
+                    added_count += 1
+                    logs.append(f"Added event: {short_title}")
+                else:
+                    skipped_count += 1
+                    logs.append(f"Skipped existing event: {short_title}")
+
+        logs.append(f"Import complete. Added={added_count}, Skipped={skipped_count}.")
+        return "<pre>" + "\n".join(logs) + "</pre>"
+    except Exception as e:
+        logs.append("Error: " + str(e))
+        return "<pre>" + "\n".join(logs) + "</pre>", 500
+    
 
 # --------------------------
 # Asana Functions
@@ -857,10 +1042,146 @@ def start_asana_scheduler():
     scheduler.add_job(process_asana_tasks, 'interval', seconds=60, max_instances=1)
     scheduler.start()
 
+
+# Ensure you’re using Pillow 10+:
+# Use Image.Resampling.LANCZOS instead of the removed ANTIALIAS
+MAX_SIZE = (800, 800)   # adjust as needed
+JPEG_QUALITY = 70       # adjust quality as needed
+
+def compress_image(image_bytes):
+    """Compress and resize image data using Pillow."""
+    try:
+        with BytesIO(image_bytes) as input_io:
+            with Image.open(input_io) as im:
+                if im.mode not in ("RGB", "RGBA"):
+                    im = im.convert("RGB")
+                elif im.mode == "RGBA":
+                    im = im.convert("RGB")
+                # Resize image while preserving aspect ratio
+                im.thumbnail(MAX_SIZE, Image.Resampling.LANCZOS)
+                output_io = BytesIO()
+                im.save(output_io, format="JPEG", quality=JPEG_QUALITY, optimize=True, progressive=True)
+                return output_io.getvalue()
+    except Exception as e:
+        print(f"Error compressing image: {e}")
+        return None
+
+@app.route("/compress_images")
+def compress_images_route():
+    def generate():
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Select events that have non-null image_data
+        cur.execute("SELECT asana_task_gid, image_data FROM events WHERE image_data IS NOT NULL;")
+        rows = cur.fetchall()
+        
+        # Start streaming the HTML output
+        yield "<html><head><title>Image Compression Log</title>"
+        yield """
+        <style>
+          body { font-family: sans-serif; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+          th { background-color: #eee; }
+        </style>
+        """
+        yield "</head><body>"
+        yield "<h2>Image Compression Log</h2>"
+        yield "<table><tr><th>Event ID</th><th>Current Size (bytes)</th><th>New Size (bytes)</th><th>Log</th></tr>"
+        
+        for uid, image_data in rows:
+            if not image_data:
+                continue
+            # Get raw bytes (if stored as psycopg2.Binary, use .tobytes())
+            raw_data = image_data.tobytes() if hasattr(image_data, "tobytes") else image_data
+            current_size = len(raw_data)
+            new_img = compress_image(raw_data)
+            if new_img:
+                new_size = len(new_img)
+                cur.execute("UPDATE events SET image_data = %s WHERE asana_task_gid = %s;", 
+                            (psycopg2.Binary(new_img), uid))
+                conn.commit()
+                log_msg = "Success"
+            else:
+                new_size = 0
+                log_msg = "Failed"
+            row_html = f"<tr><td>{uid}</td><td>{current_size}</td><td>{new_size}</td><td>{log_msg}</td></tr>"
+            yield row_html
+            # Force auto-scroll
+            yield "<script>window.scrollTo(0, document.body.scrollHeight);</script>"
+        yield "</table><h3>Compression complete</h3></body></html>"
+        cur.close()
+        conn.close()
+    return Response(generate(), mimetype="text/html")
+
+@app.route("/delete_all_events", methods=["GET"])
+def delete_all_events_route():
+    confirm = request.args.get("confirm", "no")
+    if confirm.lower() != "yes":
+        # Render a confirmation form with a button.
+        return '''
+            <html>
+              <head>
+                <title>Delete All Events</title>
+                <style>
+                  body { font-family: sans-serif; margin: 20px; }
+                  .warning { color: red; font-weight: bold; }
+                  button { padding: 10px 20px; font-size: 16px; }
+                </style>
+              </head>
+              <body>
+                <h2>Delete All Events</h2>
+                <p class="warning">WARNING: This will delete <strong>ALL</strong> events from the database.</p>
+                <form method="get" action="/delete_all_events">
+                  <input type="hidden" name="confirm" value="yes">
+                  <button type="submit">Confirm Deletion</button>
+                </form>
+              </body>
+            </html>
+        '''
+    
+    # If confirmed, execute the deletion logic.
+    conn = None
+    cur = None
+    log_message = ""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Get count of events before deletion
+        cur.execute("SELECT COUNT(*) FROM events")
+        count = cur.fetchone()[0]
+        # Delete all events
+        cur.execute("DELETE FROM events")
+        conn.commit()
+        log_message = f"Successfully deleted {count} events from the database."
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        log_message = f"Error deleting events: {e}"
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+    
+    return f'''
+        <html>
+          <head>
+            <title>Delete All Events</title>
+            <style>
+              body {{ font-family: sans-serif; margin: 20px; }}
+              .log {{ font-size: 18px; }}
+            </style>
+          </head>
+          <body>
+            <h2>Delete All Events</h2>
+            <p class="log">{log_message}</p>
+          </body>
+        </html>
+    '''
+
 if __name__ == "__main__":
     init_db()
     if os.getenv('ASANA_TOKEN') and os.getenv('ASANA_DEMO_PROJECT_ID'):
         start_asana_scheduler()
     app.run(debug=True, threaded=False)
-
-    serve(app, host="127.0.0.1", port=5000)
